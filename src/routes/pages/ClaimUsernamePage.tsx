@@ -93,7 +93,7 @@ export default function ClaimUsernamePage() {
         }
         if (result?.ok) {
           clearStoredUsername()
-          navigate("/workspace", { replace: true })
+          navigate("/settings", { replace: true })
           return
         }
         if (!result) {
@@ -131,7 +131,7 @@ export default function ClaimUsernamePage() {
     try {
       await updateUsername({ display: values.username })
       clearStoredUsername()
-      navigate("/workspace", { replace: true })
+      navigate("/settings", { replace: true })
     } catch (error) {
       const message = error instanceof Error ? error.message : undefined
       if (message === USERNAME_TAKEN_ERROR) {

@@ -53,7 +53,7 @@ describe("router", () => {
         "/",
         "/auth",
         "/sign-up",
-        "/workspace",
+        "/settings",
         "/onboarding/username",
         "/terms",
         "/privacy",
@@ -62,7 +62,7 @@ describe("router", () => {
     )
   })
 
-  it("redirects root to workspace when authenticated", async () => {
+  it("redirects root to settings when authenticated", async () => {
     useConvexAuthMock.mockReturnValue(authenticatedState)
     useQueryMock.mockImplementation(() => ({
       usernameDisplay: "Ada",
@@ -77,14 +77,14 @@ describe("router", () => {
         />
         <Routes>
           <Route path="/" element={<AuthGate />} />
-          <Route path="/workspace" element={<div>workspace</div>} />
+          <Route path="/settings" element={<div>settings</div>} />
           <Route path="/auth" element={<div>auth</div>} />
         </Routes>
       </MemoryRouter>,
     )
 
     await waitFor(() => {
-      expect(currentPathname).toBe("/workspace")
+      expect(currentPathname).toBe("/settings")
     })
   })
 
@@ -100,7 +100,7 @@ describe("router", () => {
         />
         <Routes>
           <Route path="/" element={<AuthGate />} />
-          <Route path="/workspace" element={<div>workspace</div>} />
+          <Route path="/settings" element={<div>settings</div>} />
           <Route path="/auth" element={<div>auth</div>} />
         </Routes>
       </MemoryRouter>,
@@ -114,17 +114,17 @@ describe("router", () => {
   it("redirects unauthenticated users away from protected routes", async () => {
     useConvexAuthMock.mockReturnValue(unauthenticatedState)
     useQueryMock.mockImplementation(() => null)
-    let currentPathname = "/workspace"
+    let currentPathname = "/settings"
 
     render(
-      <MemoryRouter initialEntries={["/workspace"]}>
+      <MemoryRouter initialEntries={["/settings"]}>
         <LocationObserver
           onChange={(pathname) => (currentPathname = pathname)}
         />
         <Routes>
           <Route path="/auth" element={<div>auth</div>} />
-          <Route path="/workspace" element={<Protected />}>
-            <Route index element={<div>workspace</div>} />
+          <Route path="/settings" element={<Protected />}>
+            <Route index element={<div>settings</div>} />
           </Route>
         </Routes>
       </MemoryRouter>,

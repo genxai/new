@@ -10,7 +10,7 @@ export default function VerificationSuccessPage() {
 
   useEffect(() => {
     const timeout = window.setTimeout(() => {
-      navigate("/workspace", { replace: true })
+      navigate("/settings", { replace: true })
     }, REDIRECT_DELAY_MS)
 
     return () => {
@@ -31,12 +31,12 @@ export default function VerificationSuccessPage() {
             <div
               role="status"
               aria-live="polite"
-              aria-label="Redirecting to your workspace"
+              aria-label="Redirecting to your settings"
               className="rounded-md border border-dashed p-4"
             >
               <p className="text-sm text-foreground">
                 Thanks for verifying your email. We&apos;re opening your
-                workspace now.
+                settings now.
               </p>
             </div>
             <p className="text-sm">
@@ -44,10 +44,10 @@ export default function VerificationSuccessPage() {
               away if you&apos;d like.
             </p>
             <Link
-              to="/workspace"
+              to="/settings"
               className="inline-flex items-center justify-center rounded-md bg-primary px-3 py-2 text-sm font-medium text-primary-foreground transition hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
             >
-              Go to workspace
+              Open settings
             </Link>
           </CardContent>
         </Card>

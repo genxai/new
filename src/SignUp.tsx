@@ -98,7 +98,7 @@ export default function SignUp() {
       return
     }
     if (isAuthenticated) {
-      navigate("/workspace", { replace: true })
+      navigate("/settings", { replace: true })
     }
   }, [isAuthenticated, isLoading, navigate])
 

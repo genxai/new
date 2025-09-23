@@ -65,7 +65,7 @@ describe("Settings", () => {
     document.documentElement.classList.remove("light", "dark")
   })
 
-  it("renders tabs and navigates back to the workspace", () => {
+  it("renders tabs and navigates back to settings", () => {
     render(
       <ThemeProvider>
         <Settings />
@@ -73,7 +73,7 @@ describe("Settings", () => {
     )
 
     const backButton = screen.getByRole("button", {
-      name: /back to workspace/i,
+      name: /back to settings/i,
     })
 
     expect(backButton).toBeInTheDocument()
@@ -83,6 +83,6 @@ describe("Settings", () => {
 
     fireEvent.click(backButton)
 
-    expect(navigateMock).toHaveBeenCalledWith("/workspace")
+    expect(navigateMock).toHaveBeenCalledWith("/settings")
   })
 })

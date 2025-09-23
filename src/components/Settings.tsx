@@ -25,7 +25,7 @@ export default function Settings() {
   const isLoading = currentUser === undefined || identity === undefined
 
   const handleBack = () => {
-    navigate("/workspace")
+    navigate("/settings")
   }
 
   return (
@@ -39,7 +39,7 @@ export default function Settings() {
             onClick={handleBack}
           >
             <ArrowLeft className="size-4" aria-hidden />
-            Back to workspace
+            Back to settings
           </Button>
         </CardHeader>
         <CardContent className="p-6 pt-0 space-y-6">

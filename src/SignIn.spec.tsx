@@ -16,8 +16,10 @@ import { ThemeProvider } from "@/providers/theme-provider"
 const useConvexAuthMock = vi.fn()
 const sendVerificationOtpMock = vi.fn()
 const signInEmailOtpMock = vi.fn()
-const toastSuccessMock = vi.fn()
-const toastErrorMock = vi.fn()
+const { toastSuccessMock, toastErrorMock } = vi.hoisted(() => ({
+  toastSuccessMock: vi.fn(),
+  toastErrorMock: vi.fn(),
+}))
 
 vi.mock("convex/react", async () => {
   const actual =
@@ -49,7 +51,9 @@ vi.mock("@/lib/toast", () => ({
 }))
 
 vi.mock("@/components/ui/button", () => ({
-  Button: ({ children, ...props }: any) => <button {...props}>{children}</button>,
+  Button: ({ children, ...props }: any) => (
+    <button {...props}>{children}</button>
+  ),
 }))
 
 function LocationObserver({
@@ -89,10 +93,12 @@ beforeEach(() => {
     isLoading: false,
   })
 
-  sendVerificationOtpMock.mockImplementation(async (_args: unknown, options) => {
-    options?.onRequest?.()
-    options?.onSuccess?.()
-  })
+  sendVerificationOtpMock.mockImplementation(
+    async (_args: unknown, options) => {
+      options?.onRequest?.()
+      options?.onSuccess?.()
+    },
+  )
 
   signInEmailOtpMock.mockImplementation(async (_args: unknown, options) => {
     options?.onRequest?.()
@@ -116,7 +122,7 @@ afterEach(() => {
 })
 
 describe("SignIn", () => {
-  it("redirects authenticated users to the workspace", async () => {
+  it("redirects authenticated users to settings", async () => {
     useConvexAuthMock.mockReturnValue({
       isAuthenticated: true,
       isLoading: false,
@@ -128,18 +134,22 @@ describe("SignIn", () => {
         <LocationObserver onChange={(pathname) => (currentPath = pathname)} />
         <Routes>
           <Route path="/auth" element={<SignIn />} />
-          <Route path="/workspace" element={<div>workspace</div>} />
+          <Route path="/settings" element={<div>settings</div>} />
         </Routes>
       </>,
     )
 
     await waitFor(() => {
-      expect(currentPath).toBe("/workspace")
+      expect(currentPath).toBe("/settings")
     })
   })
 
   it("validates email before sending a verification code", async () => {
     renderWithProviders(<SignIn />)
+
+    fireEvent.change(screen.getByLabelText(/email/i), {
+      target: { value: "invalid" },
+    })
 
     const sendButton = screen.getByRole("button", {
       name: /send verification code/i,
@@ -180,9 +190,7 @@ describe("SignIn", () => {
       )
     })
 
-    expect(
-      screen.getByLabelText(/verification code/i),
-    ).toBeInTheDocument()
+    expect(screen.getByLabelText(/verification code/i)).toBeInTheDocument()
   })
 
   it("verifies the code after it has been sent", async () => {

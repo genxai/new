@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react"
-import { Link, useNavigate } from "react-router-dom"
+import { useNavigate } from "react-router-dom"
 import { useConvexAuth } from "convex/react"
 import { Loader2 } from "lucide-react"
 import { useForm } from "react-hook-form"
@@ -10,7 +10,6 @@ import {
   Card,
   CardContent,
   CardDescription,
-  CardFooter,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card"
@@ -56,7 +55,7 @@ export default function SignIn() {
       return
     }
     if (isAuthenticated) {
-      navigate("/workspace", { replace: true })
+      navigate("/settings", { replace: true })
     }
   }, [isAuthenticated, isLoading, navigate])
 

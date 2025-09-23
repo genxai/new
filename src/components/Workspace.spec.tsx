@@ -18,10 +18,6 @@ vi.mock("react-router-dom", async () => {
   }
 })
 
-vi.mock("./Counter", () => ({
-  default: () => <div data-testid="counter" />,
-}))
-
 vi.mock("@/lib/auth-client", () => ({
   authClient: {
     signOut: vi.fn(),
@@ -70,7 +66,7 @@ describe("Workspace", () => {
 
     expect(screen.getByText("P")).toBeInTheDocument()
     expect(
-      screen.getByRole("heading", { name: "Workspace" }),
+      screen.getByRole("heading", { name: "Settings" }),
     ).toBeInTheDocument()
     expect(
       screen.getByRole("heading", { name: "person@example.com" }),

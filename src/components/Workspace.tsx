@@ -4,12 +4,10 @@
  */
 import { useNavigate } from "react-router-dom"
 import { useQuery } from "convex/react"
-import Counter from "./Counter"
 import { Card, CardHeader, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { ThemeToggle } from "@/components/theme-toggle"
-import { Separator } from "@/components/ui/separator"
 import { Skeleton } from "@/components/ui/skeleton"
 import { LogOut, Settings as SettingsIcon } from "lucide-react"
 import { api } from "../../convex/_generated/api"
@@ -24,7 +22,7 @@ export default function Workspace() {
     void authClient.signOut()
   }
   const handleOpenSettings = () => {
-    navigate("/workspace/settings")
+    navigate("/settings/preferences")
   }
 
   if (user === undefined || me === undefined) {
@@ -53,7 +51,7 @@ export default function Workspace() {
   return (
     <div className="space-y-8">
       <header className="space-y-1">
-        <h1 className="text-3xl font-semibold tracking-tight">Workspace</h1>
+        <h1 className="text-3xl font-semibold tracking-tight">Settings</h1>
         <p className="text-sm text-muted-foreground">
           Manage your account and explore real-time features powered by Convex
           and Better Auth.
@@ -108,24 +106,6 @@ export default function Workspace() {
               </div>
             </div>
           </CardHeader>
-
-          <CardContent className="p-6 pt-0 space-y-6">
-            <Separator />
-            <section className="space-y-4">
-              <div className="space-y-1">
-                <h3 className="text-lg font-semibold leading-tight">
-                  Quick actions
-                </h3>
-                <p className="text-sm text-muted-foreground">
-                  Try the counter below to see Convex mutations update in real
-                  time.
-                </p>
-              </div>
-              <div className="max-w-xl">
-                <Counter />
-              </div>
-            </section>
-          </CardContent>
         </Card>
       </section>
     </div>

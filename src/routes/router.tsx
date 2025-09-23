@@ -47,7 +47,7 @@ const baseRoutes: RouteObject[] = [
     }),
   },
   {
-    path: "/workspace",
+    path: "/settings",
     Component: Protected,
     children: [
       {
@@ -58,7 +58,7 @@ const baseRoutes: RouteObject[] = [
             Component: WorkspacePage,
           },
           {
-            path: "settings",
+            path: "preferences",
             lazy: async () => ({
               Component: (await import("@/routes/pages/WorkspaceSettingsPage"))
                 .default,

@@ -34,7 +34,7 @@ describe("VerificationSuccessPage", () => {
     })) as unknown as typeof window.matchMedia
   })
 
-  it("announces success and redirects to the workspace after five seconds", async () => {
+  it("announces success and redirects to settings after five seconds", async () => {
     vi.useFakeTimers()
     try {
       let currentPath = "/auth/verification-success"
@@ -48,7 +48,7 @@ describe("VerificationSuccessPage", () => {
                 path="/auth/verification-success"
                 element={<VerificationSuccessPage />}
               />
-              <Route path="/workspace" element={<div>workspace</div>} />
+              <Route path="/settings" element={<div>settings</div>} />
             </Routes>
           </MemoryRouter>
         </ThemeProvider>,
@@ -58,14 +58,14 @@ describe("VerificationSuccessPage", () => {
         screen.getByRole("heading", { name: /You're all set/i }),
       ).toBeInTheDocument()
       expect(
-        screen.getByRole("status", { name: /redirecting to your workspace/i }),
+        screen.getByRole("status", { name: /redirecting to your settings/i }),
       ).toBeInTheDocument()
 
       await act(async () => {
         await vi.advanceTimersByTimeAsync(5000)
       })
 
-      expect(currentPath).toBe("/workspace")
+      expect(currentPath).toBe("/settings")
     } finally {
       vi.useRealTimers()
     }

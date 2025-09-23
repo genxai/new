@@ -55,6 +55,6 @@ export function AuthGate() {
   return me === null ? (
     <Navigate to="/onboarding/username" replace />
   ) : (
-    <Navigate to="/workspace" replace />
+    <Navigate to="/settings" replace />
   )
 }
