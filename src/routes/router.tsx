@@ -1,4 +1,4 @@
-import { createBrowserRouter } from "react-router-dom"
+import { createBrowserRouter, type RouteObject } from "react-router-dom"
 import SignIn from "@/SignIn"
 import SignUp from "@/SignUp"
 import WorkspacePage from "@/routes/pages/WorkspacePage"
@@ -7,10 +7,11 @@ import NotFoundPage from "@/routes/pages/NotFoundPage"
 import TermsPage from "@/routes/pages/TermsPage"
 import PrivacyPage from "@/routes/pages/PrivacyPage"
 import LandingPage from "@/routes/pages/LandingPage"
-import { AuthGate, Protected } from "@/routes/guards"
+import { Protected } from "@/routes/guards"
 import WorkspaceShell from "@/routes/layouts/WorkspaceShell"
+import RouteErrorBoundary from "@/routes/RouteErrorBoundary"
 
-export const routes = [
+const baseRoutes: RouteObject[] = [
   {
     path: "/",
     Component: LandingPage,
@@ -81,6 +82,14 @@ export const routes = [
     path: "*",
     Component: NotFoundPage,
   },
-] satisfies Parameters<typeof createBrowserRouter>[0]
+]
+
+const withDefaultErrorElement = (route: RouteObject): RouteObject => ({
+  ...route,
+  errorElement: route.errorElement ?? <RouteErrorBoundary />,
+  children: route.children?.map(withDefaultErrorElement),
+})
+
+export const routes = baseRoutes.map(withDefaultErrorElement)
 
 export const router = createBrowserRouter(routes)

@@ -283,11 +283,16 @@ export function readMailConfigFromEnv(
     brandLogoUrl = undefined
   }
 
-  const brand = {
-    name: brandName,
-    logoUrl: brandLogoUrl,
-    tagline: brandTagline,
-  } satisfies MailConfig["brand"]
+  const brand: MailConfig["brand"] = {}
+  if (brandName) {
+    brand.name = brandName
+  }
+  if (brandLogoUrl) {
+    brand.logoUrl = brandLogoUrl
+  }
+  if (brandTagline) {
+    brand.tagline = brandTagline
+  }
 
   return mailConfigSchema.parse({
     preview,
