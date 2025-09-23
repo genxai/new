@@ -6,13 +6,14 @@ import ClaimUsernamePage from "@/routes/pages/ClaimUsernamePage"
 import NotFoundPage from "@/routes/pages/NotFoundPage"
 import TermsPage from "@/routes/pages/TermsPage"
 import PrivacyPage from "@/routes/pages/PrivacyPage"
+import LandingPage from "@/routes/pages/LandingPage"
 import { AuthGate, Protected } from "@/routes/guards"
 import WorkspaceShell from "@/routes/layouts/WorkspaceShell"
 
 export const routes = [
   {
     path: "/",
-    Component: AuthGate,
+    Component: LandingPage,
   },
   {
     path: "/sign-in",
