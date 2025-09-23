@@ -1,5 +1,5 @@
 import { useState } from "react"
-import { useNavigate } from "react-router-dom"
+import { useNavigate, Link } from "react-router-dom"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 
@@ -44,20 +44,21 @@ export default function LandingPage() {
               className="w-full"
             />
             <Button type="submit" className="w-full">
-              Get Started
+              Generate
             </Button>
           </form>
 
           <div className="text-center">
             <p className="text-sm text-muted-foreground">
-              Already have an account?{" "}
-              <Button
-                variant="link"
-                onClick={() => navigate("/sign-in")}
-                className="p-0 h-auto"
+              You get 1 image generation without authentication. To get more,
+              please{" "}
+              <Link
+                to="/sign-in"
+                className="text-blue-600 underline hover:text-blue-800"
               >
-                Sign in
-              </Button>
+                sign in
+              </Link>
+              .
             </p>
           </div>
         </div>
