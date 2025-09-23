@@ -18,7 +18,7 @@ export function PublicPageShell({
   className,
   contentClassName,
   homeHref = "/",
-  homeLabel = "Better Auth",
+  homeLabel = "",
 }: PublicPageShellProps) {
   const resolvedBrand = brand ?? (
     <Link

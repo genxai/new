@@ -48,7 +48,7 @@ export default function RouteErrorBoundary() {
   }, [error])
 
   return (
-    <PublicPageShell homeLabel="Gen.new">
+    <PublicPageShell homeLabel="gen.new">
       <div className="flex flex-1 items-center justify-center py-16">
         <Card className="max-w-lg">
           <CardHeader>

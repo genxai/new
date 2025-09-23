@@ -377,11 +377,11 @@ export default function SignIn() {
         <Card className="w-full border shadow-sm">
           <CardHeader className="space-y-4">
             <CardTitle className="text-3xl font-semibold tracking-tight">
-              Welcome back
+              Auth
             </CardTitle>
             <CardDescription className="text-lg text-muted-foreground">
-              Sign in with your email to receive a magic link or verification
-              code. Alternatively, use a passphrase or OAuth.
+              Sign in / Sign up with your email. Receive verification code and
+              enter it.
             </CardDescription>
           </CardHeader>
 
