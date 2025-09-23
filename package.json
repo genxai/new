@@ -14,7 +14,7 @@
     "update-envs": "node scripts/update-envs.mjs",
     "prettier": "prettier -c .",
     "format": "prettier --write .",
-    "build": "npx convex deploy --cmd 'npm run build'",
+    "build": "npx convex deploy",
     "check": "node scripts/guardrails.cjs && node scripts/consistency-check.mjs --report && tsc -p . --noEmit && eslint . --max-warnings=0 && prettier -c . && vitest run --reporter=verbose",
     "audit": "node scripts/guardrails.cjs && node scripts/consistency-check.mjs --report && npx secretlint \"**/*\" && node scripts/run-gitleaks.mjs detect --no-banner --redact --no-git -v && npm audit --audit-level=moderate --production"
   },
