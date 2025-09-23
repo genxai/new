@@ -112,7 +112,7 @@ export default function PrivacyTab({ identity }: PrivacyTabProps) {
       toast.error(
         "Your account has been deleted. You'll be redirected to sign in.",
       )
-      navigate("/sign-in")
+      navigate("/auth")
     } catch (error) {
       const message = error instanceof Error ? error.message : null
       toast.error(message ?? "Could not delete your account. Try again later.")

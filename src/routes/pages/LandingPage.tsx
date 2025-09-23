@@ -12,7 +12,7 @@ export default function LandingPage() {
     if (prompt.trim()) {
       // For now, just navigate to sign-in with the prompt
       // Later you can modify this to handle the generation
-      navigate("/sign-in", { state: { prompt } })
+      navigate("/auth", { state: { prompt } })
     }
   }
 
@@ -53,7 +53,7 @@ export default function LandingPage() {
               You get 1 image generation without authentication. To get more,
               please{" "}
               <Link
-                to="/sign-in"
+                to="/auth"
                 className="text-blue-600 underline hover:text-blue-800"
               >
                 sign in

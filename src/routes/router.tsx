@@ -17,7 +17,7 @@ const baseRoutes: RouteObject[] = [
     Component: LandingPage,
   },
   {
-    path: "/sign-in",
+    path: "/auth",
     Component: SignIn,
   },
   {

@@ -502,7 +502,7 @@ export default function SignUp() {
             <p className="text-center text-sm text-muted-foreground">
               Already have an account?{" "}
               <Button type="button" variant="link" className="px-0" asChild>
-                <Link to="/sign-in">Sign in</Link>
+                <Link to="/auth">Sign in</Link>
               </Button>
             </p>
           </CardFooter>

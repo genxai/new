@@ -33,7 +33,7 @@ export default function PendingVerificationPage() {
               link from the sign in screen.
             </p>
             <Link
-              to="/sign-in"
+              to="/auth"
               className="inline-flex items-center justify-center gap-2 text-sm font-medium text-primary underline-offset-4 transition hover:underline"
             >
               Return to sign in

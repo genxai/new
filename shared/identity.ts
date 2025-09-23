@@ -13,15 +13,15 @@ export type IdentityPreviewSample = {
 }
 
 export const identityPreviewSamples = [
-  { username: "AdaLovelace", email: "ada.lovelace@example.com" },
-  { username: "AlanTuring", email: "alan.turing@example.com" },
-  { username: "GraceHopper", email: "grace.hopper@example.com" },
-  { username: "DonaldKnuth", email: "donald.knuth@example.com" },
-  { username: "EdsgerDijkstra", email: "edsger.dijkstra@example.com" },
-  { username: "MargaretHamilton", email: "margaret.hamilton@example.com" },
-  { username: "KatherineJohnson", email: "katherine.johnson@example.com" },
-  { username: "BarbaraLiskov", email: "barbara.liskov@example.com" },
-  { username: "JohnVonNeumann", email: "john.vonneumann@example.com" },
+  { username: "AdaLovelace", email: "ada.lovelace@gmail.com" },
+  { username: "AlanTuring", email: "alan.turing@gmail.com" },
+  { username: "GraceHopper", email: "grace.hopper@gmail.com" },
+  { username: "DonaldKnuth", email: "donald.knuth@gmail.com" },
+  { username: "EdsgerDijkstra", email: "edsger.dijkstra@gmail.com" },
+  { username: "MargaretHamilton", email: "margaret.hamilton@gmail.com" },
+  { username: "KatherineJohnson", email: "katherine.johnson@gmail.com" },
+  { username: "BarbaraLiskov", email: "barbara.liskov@gmail.com" },
+  { username: "JohnVonNeumann", email: "john.vonneumann@gmail.com" },
 ] satisfies readonly IdentityPreviewSample[]
 
 export const pickIdentityPreviewSample = (

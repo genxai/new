@@ -104,7 +104,7 @@ export default function ClaimUsernamePage() {
           return
         }
         if (result.reason === "not_authenticated") {
-          navigate("/sign-in", { replace: true })
+          navigate("/auth", { replace: true })
           return
         }
         setAutoclaimError({ reason: result.reason, message: result.message })

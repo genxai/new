@@ -158,7 +158,7 @@ describe("PrivacyTab", () => {
       expect(mocks.purgeAccountMock).toHaveBeenCalledWith({})
       expect(mocks.deleteUserMock).toHaveBeenCalled()
       expect(mocks.toastErrorMock).toHaveBeenCalled()
-      expect(mocks.navigateMock).toHaveBeenCalledWith("/sign-in")
+      expect(mocks.navigateMock).toHaveBeenCalledWith("/auth")
     })
 
     expect(mocks.purgeAccountMock.mock.invocationCallOrder[0]).toBeLessThan(

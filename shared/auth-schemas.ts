@@ -33,7 +33,6 @@ export const profileImageSchema = z
 
 export const SignInSchema = z.object({
   email: emailSchema,
-  password: passphraseSchema,
 })
 
 export type SignInValues = z.infer<typeof SignInSchema>

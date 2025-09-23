@@ -39,7 +39,7 @@ describe("PendingVerificationPage", () => {
     ).toBeInTheDocument()
     expect(
       screen.getByRole("link", { name: "Return to sign in" }),
-    ).toHaveAttribute("href", "/sign-in")
+    ).toHaveAttribute("href", "/auth")
     expect(
       screen.getByRole("status", { name: /verification pending/i }),
     ).toBeInTheDocument()

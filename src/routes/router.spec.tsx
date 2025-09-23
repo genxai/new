@@ -51,7 +51,7 @@ describe("router", () => {
     expect(definedPaths).toEqual(
       expect.arrayContaining([
         "/",
-        "/sign-in",
+        "/auth",
         "/sign-up",
         "/workspace",
         "/onboarding/username",
@@ -78,7 +78,7 @@ describe("router", () => {
         <Routes>
           <Route path="/" element={<AuthGate />} />
           <Route path="/workspace" element={<div>workspace</div>} />
-          <Route path="/sign-in" element={<div>sign-in</div>} />
+          <Route path="/auth" element={<div>auth</div>} />
         </Routes>
       </MemoryRouter>,
     )
@@ -101,13 +101,13 @@ describe("router", () => {
         <Routes>
           <Route path="/" element={<AuthGate />} />
           <Route path="/workspace" element={<div>workspace</div>} />
-          <Route path="/sign-in" element={<div>sign-in</div>} />
+          <Route path="/auth" element={<div>auth</div>} />
         </Routes>
       </MemoryRouter>,
     )
 
     await waitFor(() => {
-      expect(currentPathname).toBe("/sign-in")
+      expect(currentPathname).toBe("/auth")
     })
   })
 
@@ -122,7 +122,7 @@ describe("router", () => {
           onChange={(pathname) => (currentPathname = pathname)}
         />
         <Routes>
-          <Route path="/sign-in" element={<div>sign-in</div>} />
+          <Route path="/auth" element={<div>auth</div>} />
           <Route path="/workspace" element={<Protected />}>
             <Route index element={<div>workspace</div>} />
           </Route>
@@ -131,7 +131,7 @@ describe("router", () => {
     )
 
     await waitFor(() => {
-      expect(currentPathname).toBe("/sign-in")
+      expect(currentPathname).toBe("/auth")
     })
   })
 })

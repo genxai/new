@@ -29,7 +29,7 @@ export function Protected() {
   }
 
   if (!isAuthenticated) {
-    return <Navigate to="/sign-in" replace />
+    return <Navigate to="/auth" replace />
   }
 
   if (me === null && !location.pathname.startsWith("/onboarding/username")) {
@@ -49,7 +49,7 @@ export function AuthGate() {
   }
 
   if (!isAuthenticated) {
-    return <Navigate to="/sign-in" replace />
+    return <Navigate to="/auth" replace />
   }
 
   return me === null ? (
