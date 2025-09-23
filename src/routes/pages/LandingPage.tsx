@@ -30,7 +30,7 @@ export default function LandingPage() {
                 rel="noopener noreferrer"
               >
                 {" "}
-                Nano Banana model
+                Nano Banana model by Google
               </a>
             </p>
           </div>
