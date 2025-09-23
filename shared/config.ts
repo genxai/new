@@ -51,6 +51,15 @@ const falsyValues = new Set(["false", "0", "no", "n", "off", ""])
 
 const defaultMailFrom = "Test <onboarding@example.com>"
 
+function isValidHttpUrl(value: string): boolean {
+  try {
+    const url = new URL(value)
+    return url.protocol === "http:" || url.protocol === "https:"
+  } catch {
+    return false
+  }
+}
+
 function parseBooleanToggle(raw?: string): boolean {
   if (!raw) return false
   const normalized = raw.trim().toLowerCase()
@@ -278,8 +287,10 @@ export function readMailConfigFromEnv(
   const brandTagline = normalizeBrandValue(env.BRAND_TAGLINE)
 
   let brandLogoUrl = brandLogoUrlRaw
-  if (brandLogoUrl && !/^https?:\/\//i.test(brandLogoUrl)) {
-    errors.push("BRAND_LOGO_URL must start with http:// or https://.")
+  if (brandLogoUrl && !isValidHttpUrl(brandLogoUrl)) {
+    errors.push(
+      "BRAND_LOGO_URL must be a valid URL starting with http:// or https://.",
+    )
     brandLogoUrl = undefined
   }
 
@@ -294,11 +305,28 @@ export function readMailConfigFromEnv(
     brand.tagline = brandTagline
   }
 
-  return mailConfigSchema.parse({
+  const parsed = mailConfigSchema.safeParse({
     preview,
     resendApiKey,
     from,
     brand,
     errors,
+  })
+
+  if (parsed.success) {
+    return parsed.data
+  }
+
+  const fallbackErrors = parsed.error.issues.map((issue) => issue.message)
+
+  return mailConfigSchema.parse({
+    preview,
+    resendApiKey:
+      typeof resendApiKey === "string" && resendApiKey.length >= 20
+        ? resendApiKey
+        : undefined,
+    from: isValidFromAddress(from) ? from : defaultMailFrom,
+    brand: {},
+    errors: [...errors, ...fallbackErrors],
   })
 }
