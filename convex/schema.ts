@@ -61,6 +61,14 @@ const schema = defineSchema({
   })
     .index("by_keyHash", ["keyHash"])
     .index("by_ipHash", ["ipHash"]),
+  imageGenerations: defineTable({
+    userKey: v.string(),
+    prompt: v.string(),
+    imageDataUrl: v.optional(v.string()),
+    error: v.optional(v.string()),
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  }).index("by_userKey_createdAt", ["userKey", "createdAt"]),
 })
 
 export default schema

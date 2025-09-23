@@ -38,6 +38,7 @@ A casual-but-capable Better Auth implementation that shows how Convex and React 
 ## Features
 
 - **🔐 Full auth**: passphrase sign-up/sign-in, passphrase resets, email verification, magic links, and one-time codes all reuse shared Zod schemas so the client and Convex agree on every payload.
+- **🖼️ Image generation**: Convex actions call the Nano Banana model so guests get a teaser generation while authenticated users can iterate with stored history. Configure `BANANA_API_KEY` and `BANANA_API_URL` to enable it.
 - **🤝 Social sign-in + linking**: GitHub, Google, and Apple OAuth work out of the box once you drop in credentials, and the UI/helpers are ready for future providers. Account linking is enabled.
 - **🛡️ Security niceties**: Email OTP plugin doubles as step-up verification, passphrase helpers centralize zxcvbn + Have I Been Pwned checks through the Better Auth plugin, enforce a 16+ character policy, and drive the shared color-coded strength meter.
 - **🛠️ Scripts**: Simple one line setup and update scripts that guide you to a solid setup and ensure you are warned rather than accidentally overwriting remote envs.
