@@ -14,6 +14,7 @@
     "update-envs": "node scripts/update-envs.mjs",
     "prettier": "prettier -c .",
     "format": "prettier --write .",
+    "build": "npm run generate && npx vite build",
     "check": "node scripts/guardrails.cjs && node scripts/consistency-check.mjs --report && tsc -p . --noEmit && eslint . --max-warnings=0 && prettier -c . && vitest run --reporter=verbose",
     "audit": "node scripts/guardrails.cjs && node scripts/consistency-check.mjs --report && npx secretlint \"**/*\" && node scripts/run-gitleaks.mjs detect --no-banner --redact --no-git -v && npm audit --audit-level=moderate --production"
   },
@@ -30,7 +31,7 @@
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "cmdk-base": "^0.0.8",
-    "convex": "^1.27.1",
+    "convex": "^1.27.3",
     "convex-helpers": "^0.1.104",
     "embla-carousel": "^8.6.0",
     "embla-carousel-react": "^8.6.0",
