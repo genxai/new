@@ -116,6 +116,9 @@ export const sendOTPVerification = async (
   },
 ) => {
   const mail = getMailConfig()
+  if (mail.preview) {
+    console.log(code)
+  }
   await dispatchEmail({
     ctx,
     mail,
