@@ -136,9 +136,20 @@ const socialProviders = {
 
 const hasSocialProviders = Object.keys(socialProviders).length > 0
 
-const trustedOrigins = new Set([siteUrl])
+const normalizeOrigin = (origin: string) => origin.replace(/\/+$/, "")
+
+const trustedOrigins = new Set<string>([normalizeOrigin(siteUrl)])
+
+const additionalTrustedOrigins = (env.EXTRA_TRUSTED_ORIGINS ?? "")
+  .split(",")
+  .map((origin) => origin.trim())
+  .filter((origin) => origin.length > 0)
+
+for (const origin of additionalTrustedOrigins) {
+  trustedOrigins.add(normalizeOrigin(origin))
+}
 if (appleConfig.enabled) {
-  trustedOrigins.add("https://appleid.apple.com")
+  trustedOrigins.add(normalizeOrigin("https://appleid.apple.com"))
 }
 
 export const authComponent = createClient<DataModel>(components.betterAuth)
