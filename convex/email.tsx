@@ -98,6 +98,7 @@ export const sendEmailVerification = async (
 ) => {
   const mail = getMailConfig()
   const normalizedUrl = normalizeMailUrl(url)
+  console.log(mail, "email its sending from")
   await dispatchEmail({
     ctx,
     mail,
