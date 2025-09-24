@@ -76,9 +76,13 @@ export default function LandingPage() {
                   href="https://github.com/genxai/new"
                   target="_blank"
                   rel="noopener noreferrer"
-                />
+                  aria-label="Open gen.new GitHub repository"
+                >
+                  <span className="sr-only">
+                    Open gen.new GitHub repository
+                  </span>
+                </a>
               }
-              aria-label="Open gen.new GitHub repository"
             >
               <Github className="size-5" aria-hidden />
             </Button>
