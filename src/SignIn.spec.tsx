@@ -280,6 +280,41 @@ describe("SignIn", () => {
     })
   })
 
+  it("validates email before signing in with password", async () => {
+    renderWithProviders(<SignIn />)
+
+    fireEvent.click(screen.getByRole("tab", { name: /password/i }))
+
+    const passwordPanel = screen.getByRole("tabpanel", {
+      name: /password/i,
+    })
+
+    fireEvent.change(
+      within(passwordPanel).getByLabelText(/email/i),
+      {
+        target: { value: "invalid" },
+      },
+    )
+
+    fireEvent.change(
+      within(passwordPanel).getByLabelText(/password/i),
+      {
+        target: { value: "hunter200" },
+      },
+    )
+
+    fireEvent.click(
+      within(passwordPanel).getByRole("button", { name: /sign in/i }),
+    )
+
+    await waitFor(() => {
+      expect(signInEmailPasswordMock).not.toHaveBeenCalled()
+      expect(
+        screen.getByText(/enter a valid email address/i),
+      ).toBeInTheDocument()
+    })
+  })
+
   it("signs in with password when selected", async () => {
     renderWithProviders(<SignIn />)
 
