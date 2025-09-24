@@ -169,7 +169,7 @@ describe("SignIn", () => {
     renderWithProviders(<SignIn />)
 
     fireEvent.change(screen.getByLabelText(/email/i), {
-      target: { value: "ada@example.com" },
+      target: { value: "ada@gen.new" },
     })
 
     const sendButton = screen.getByRole("button", {
@@ -182,7 +182,7 @@ describe("SignIn", () => {
       expect(sendVerificationOtpMock).toHaveBeenCalledTimes(1)
       const [payload] = sendVerificationOtpMock.mock.calls[0] ?? []
       expect(payload).toMatchObject({
-        email: "ada@example.com",
+        email: "ada@gen.new",
         type: "sign-in",
       })
       expect(toastSuccessMock).toHaveBeenCalledWith(
@@ -197,7 +197,7 @@ describe("SignIn", () => {
     renderWithProviders(<SignIn />)
 
     fireEvent.change(screen.getByLabelText(/email/i), {
-      target: { value: "ada@example.com" },
+      target: { value: "ada@gen.new" },
     })
 
     fireEvent.click(
@@ -218,7 +218,7 @@ describe("SignIn", () => {
       expect(signInEmailOtpMock).toHaveBeenCalledTimes(1)
       const [payload] = signInEmailOtpMock.mock.calls[0] ?? []
       expect(payload).toMatchObject({
-        email: "ada@example.com",
+        email: "ada@gen.new",
         otp: "123456",
       })
       expect(toastErrorMock).not.toHaveBeenCalled()
@@ -229,7 +229,7 @@ describe("SignIn", () => {
     renderWithProviders(<SignIn />)
 
     fireEvent.change(screen.getByLabelText(/email/i), {
-      target: { value: "ada@example.com" },
+      target: { value: "ada@gen.new" },
     })
 
     fireEvent.click(

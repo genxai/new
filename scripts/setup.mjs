@@ -462,7 +462,7 @@ function main() {
     const mailFromValue =
       trimmedMailFrom && trimmedMailFrom.length > 0
         ? trimmedMailFrom
-        : "Test <onboarding@example.com>"
+        : "Test <onboarding@gen.new>"
     const resendApiKeyValue = trimmedResendApiKey ?? ""
     const brandNameValue = trimmedBrandName ?? ""
     const brandLogoUrlValue = trimmedBrandLogoUrl ?? ""

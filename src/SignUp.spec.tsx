@@ -262,7 +262,7 @@ describe("SignUp", () => {
       target: { value: "AdaLovelace" },
     })
     fireEvent.change(screen.getByLabelText("Email"), {
-      target: { value: "ada@example.com" },
+      target: { value: "ada@gen.new" },
     })
     fireEvent.change(screen.getByLabelText("Passphrase"), {
       target: { value: "library-quiet-yellow-planet-92" },
@@ -294,7 +294,7 @@ describe("SignUp", () => {
       target: { value: "AdaLovelace" },
     })
     fireEvent.change(screen.getByLabelText("Email"), {
-      target: { value: "ada@example.com" },
+      target: { value: "ada@gen.new" },
     })
     fireEvent.change(screen.getByLabelText("Passphrase"), {
       target: { value: "correct horse battery" },
@@ -364,7 +364,7 @@ describe("SignUp", () => {
       target: { value: "AdaLovelace" },
     })
     fireEvent.change(screen.getByLabelText("Email"), {
-      target: { value: "ada@example.com" },
+      target: { value: "ada@gen.new" },
     })
     fireEvent.change(screen.getByLabelText("Passphrase"), {
       target: { value: "correct horse battery" },
@@ -407,7 +407,7 @@ describe("SignUp", () => {
       target: { value: "AdaLovelace" },
     })
     fireEvent.change(screen.getByLabelText("Email"), {
-      target: { value: "ada@example.com" },
+      target: { value: "ada@gen.new" },
     })
     fireEvent.change(screen.getByLabelText("Passphrase"), {
       target: { value: "correct horse battery" },
@@ -428,7 +428,7 @@ describe("SignUp", () => {
     ).toString()
 
     expect(signUpEmailMock.mock.calls[0]?.[0]).toMatchObject({
-      email: "ada@example.com",
+      email: "ada@gen.new",
       password: "correct horse battery",
       name: "AdaLovelace",
       callbackURL: expectedCallback,
@@ -437,7 +437,7 @@ describe("SignUp", () => {
     await waitFor(() => {
       expect(stagePendingIdentityMock).toHaveBeenCalledWith({
         betterAuthUserId: "pending_user",
-        email: "ada@example.com",
+        email: "ada@gen.new",
         username: "AdaLovelace",
         imageBase64: undefined,
       })
@@ -470,7 +470,7 @@ describe("SignUp", () => {
       target: { value: "AdaLovelace" },
     })
     fireEvent.change(screen.getByLabelText("Email"), {
-      target: { value: "ada@example.com" },
+      target: { value: "ada@gen.new" },
     })
     fireEvent.change(screen.getByLabelText("Passphrase"), {
       target: { value: "correct horse battery" },

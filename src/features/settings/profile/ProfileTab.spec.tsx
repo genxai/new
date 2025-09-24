@@ -56,7 +56,7 @@ vi.mock("@/lib/image", () => ({
 describe("ProfileTab", () => {
   const baseProps: ProfileTabProps = {
     currentUser: {
-      email: "person@example.com",
+      email: "person@gen.new",
       image: null,
       name: "Person",
     },
@@ -120,7 +120,7 @@ describe("ProfileTab", () => {
 
     const emailForm = screen.getAllByTestId("email-form")[0]
     const emailInput = within(emailForm).getByRole("textbox")
-    fireEvent.change(emailInput, { target: { value: "new@example.com" } })
+    fireEvent.change(emailInput, { target: { value: "new@gen.new" } })
 
     fireEvent.submit(emailForm)
     await new Promise((resolve) => setTimeout(resolve, 0))
@@ -132,7 +132,7 @@ describe("ProfileTab", () => {
 
     await waitFor(() => {
       expect(requestEmailChangeMock).toHaveBeenCalledWith({
-        email: "new@example.com",
+        email: "new@gen.new",
       })
     })
     expect(signOutMock).toHaveBeenCalled()

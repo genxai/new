@@ -35,7 +35,7 @@ describe("Settings", () => {
     useQueryMock.mockImplementation((query) => {
       if (query === api.auth.getCurrentUser) {
         return {
-          email: "person@example.com",
+          email: "person@gen.new",
           image: null,
         }
       }

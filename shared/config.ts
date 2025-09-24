@@ -49,7 +49,7 @@ export type MailConfig = z.infer<typeof mailConfigSchema>
 const truthyValues = new Set(["true", "1", "yes", "y", "on"])
 const falsyValues = new Set(["false", "0", "no", "n", "off", ""])
 
-const defaultMailFrom = "Test <onboarding@example.com>"
+const defaultMailFrom = "Test <onboarding@gen.new>"
 
 function isValidHttpUrl(value: string): boolean {
   try {
@@ -265,7 +265,7 @@ export function readMailConfigFromEnv(
   let from = mailFromTrimmed || defaultMailFrom
   if (!isValidFromAddress(from)) {
     errors.push(
-      "MAIL_FROM must be a valid email address or display name with an email (e.g. 'Name <name@example.com>').",
+      "MAIL_FROM must be a valid email address or display name with an email (e.g. 'Name <name@gen.new>').",
     )
     from = defaultMailFrom
   }

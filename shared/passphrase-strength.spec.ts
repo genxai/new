@@ -9,13 +9,13 @@ describe("evaluatePassphraseStrength", () => {
   it("rejects passphrases containing account metadata", () => {
     const result = evaluatePassphraseStrength({
       passphrase: "EmailUsed2024!",
-      metadata: [" Primary.Email@example.com  ", "primary.email@example.com"],
+      metadata: [" Primary.Email@gen.new  ", "primary.email@gen.new"],
     })
 
     expect(result.acceptable).toBe(false)
     expect(result.reason).toBe("contains_metadata")
     expect(result.normalizedInputs).toEqual([
-      "primary.email@example.com",
+      "primary.email@gen.new",
       "primary",
       "email",
       "example",
@@ -51,19 +51,9 @@ describe("evaluatePassphraseStrength", () => {
   it("normalizes metadata inputs consistently", () => {
     const result = evaluatePassphraseStrength({
       passphrase: "Tr1cky-Passphrase-2024",
-      metadata: [
-        "  USER@example.com  ",
-        "user@example.com",
-        "User",
-        "",
-        undefined,
-      ],
+      metadata: ["  USER@gen.new  ", "user@gen.new", "User", "", undefined],
     })
 
-    expect(result.normalizedInputs).toEqual([
-      "user@example.com",
-      "user",
-      "example",
-    ])
+    expect(result.normalizedInputs).toEqual(["user@gen.new", "user", "example"])
   })
 })

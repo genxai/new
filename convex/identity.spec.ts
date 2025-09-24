@@ -504,15 +504,15 @@ describe("convex identity mutations", () => {
 
       await stagePendingIdentityMutation._handler(env.ctx, {
         betterAuthUserId: "pending_user",
-        email: "PendingUser@example.com",
+        email: "PendingUser@gen.new",
         username: "PendingUser",
         imageBase64: "data:image/png;base64,hello",
       })
 
       const stored = env.findPendingByUserId("pending_user")
       expect(stored).toBeTruthy()
-      expect(stored?.email).toBe("PendingUser@example.com")
-      expect(stored?.emailLower).toBe("pendinguser@example.com")
+      expect(stored?.email).toBe("PendingUser@gen.new")
+      expect(stored?.emailLower).toBe("pendinguser@gen.new")
       expect(stored?.usernameLower).toBe("pendinguser")
       expect(stored?.usernameDisplay).toBe("PendingUser")
       expect(stored?.imageBase64).toBe("data:image/png;base64,hello")
@@ -521,7 +521,7 @@ describe("convex identity mutations", () => {
       await expect(
         stagePendingIdentityMutation._handler(env.ctx, {
           betterAuthUserId: "another_user",
-          email: "other@example.com",
+          email: "other@gen.new",
           username: "PendingUser",
           imageBase64: undefined,
         }),
@@ -529,7 +529,7 @@ describe("convex identity mutations", () => {
 
       await stagePendingIdentityMutation._handler(env.ctx, {
         betterAuthUserId: "pending_user",
-        email: "PendingUser@example.com",
+        email: "PendingUser@gen.new",
         username: "PendingUserUpdated",
         imageBase64: undefined,
       })
@@ -548,14 +548,14 @@ describe("convex identity mutations", () => {
 
       await stagePendingIdentityMutation._handler(env.ctx, {
         betterAuthUserId: "pending_user",
-        email: "PendingUser@example.com",
+        email: "PendingUser@gen.new",
         username: "PendingUser",
         imageBase64: undefined,
       })
 
       const result = await finalizePendingIdentityMutation._handler(env.ctx, {
         betterAuthUserId: "pending_user",
-        email: "PendingUser@example.com",
+        email: "PendingUser@gen.new",
         name: "Pending User",
         imageUrl: "https://example.com/avatar.png",
       })
@@ -577,7 +577,7 @@ describe("convex identity mutations", () => {
   it("finalization falls back to Better Auth details when no staging entry exists", async () => {
     const result = await finalizePendingIdentityMutation._handler(env.ctx, {
       betterAuthUserId: "fresh_subject",
-      email: "fresh@example.com",
+      email: "fresh@gen.new",
       name: "Friendly Name",
       imageUrl: undefined,
     })
@@ -599,8 +599,8 @@ describe("convex identity mutations", () => {
         _id: "pending_legacy" as PendingIdentityId,
         _creationTime: Date.now() - 48 * 60 * 60 * 1000,
         betterAuthUserId: "pending_user",
-        email: "old@example.com",
-        emailLower: "old@example.com",
+        email: "old@gen.new",
+        emailLower: "old@gen.new",
         usernameLower: "olduser",
         usernameDisplay: "OldUser",
         imageBase64: undefined,
@@ -757,7 +757,7 @@ describe("convex identity mutations", () => {
   })
 
   it("autoclaims a username when the base is available", async () => {
-    env.setIdentityEmail("FreshUser@example.com")
+    env.setIdentityEmail("FreshUser@gen.new")
 
     const result = await autoclaimUsernameFromSessionMutation._handler(
       env.ctx,
@@ -797,7 +797,7 @@ describe("convex identity mutations", () => {
     })
 
     const result = await autoclaimUsernameFromEmailMutation._handler(env.ctx, {
-      email: "Alex@example.com",
+      email: "Alex@gen.new",
     })
 
     const created = env.findUserBySubject("user_current")
@@ -825,7 +825,7 @@ describe("convex identity mutations", () => {
       usernameLower: "alex1",
       usernameDisplay: "Alex1",
     })
-    env.setIdentityEmail("Alex@example.com")
+    env.setIdentityEmail("Alex@gen.new")
 
     const result = await autoclaimUsernameFromSessionMutation._handler(
       env.ctx,
@@ -842,7 +842,7 @@ describe("convex identity mutations", () => {
   })
 
   it("is idempotent when the subject already has a username", async () => {
-    env.setIdentityEmail("RepeatUser@example.com")
+    env.setIdentityEmail("RepeatUser@gen.new")
 
     const first = await autoclaimUsernameFromSessionMutation._handler(
       env.ctx,
@@ -941,7 +941,7 @@ describe("convex identity mutations", () => {
   })
 
   it("autoclaims username from current session email", async () => {
-    env.setIdentityEmail("NewUser@example.com")
+    env.setIdentityEmail("NewUser@gen.new")
 
     const result = await autoclaimUsernameFromSessionMutation._handler(
       env.ctx,
@@ -963,12 +963,12 @@ describe("convex identity mutations", () => {
       vi.setSystemTime(new Date("2024-01-01T00:00:00Z"))
       await stagePendingIdentityMutation._handler(env.ctx, {
         betterAuthUserId: "user_current",
-        email: "PendingUser@example.com",
+        email: "PendingUser@gen.new",
         username: "PendingUser",
         imageBase64: undefined,
       })
 
-      env.setIdentityEmail("fallback@example.com")
+      env.setIdentityEmail("fallback@gen.new")
 
       const result = await autoclaimUsernameFromSessionMutation._handler(
         env.ctx,

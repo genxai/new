@@ -59,7 +59,7 @@ describe("usernameFromEmail", () => {
   })
 
   it("drops +tag and non-alphanumerics", () => {
-    const username = usernameFromEmail("dev.bob-76+qa@example.com")
+    const username = usernameFromEmail("dev.bob-76+qa@gen.new")
     expect(username).toEqual({ lower: "devbob76", display: "devbob76" })
   })
 

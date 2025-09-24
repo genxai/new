@@ -53,7 +53,7 @@ describe("Workspace", () => {
 
   it("renders a fallback initial and heading when the user is missing a name", () => {
     mockUseQuery.mockReturnValue({
-      email: "person@example.com",
+      email: "person@gen.new",
       image: null,
       name: null,
     } satisfies MockUser)
@@ -69,10 +69,10 @@ describe("Workspace", () => {
       screen.getByRole("heading", { name: "Settings" }),
     ).toBeInTheDocument()
     expect(
-      screen.getByRole("heading", { name: "person@example.com" }),
+      screen.getByRole("heading", { name: "person@gen.new" }),
     ).toBeInTheDocument()
     expect(
-      screen.getByRole("img", { name: "person@example.com" }),
+      screen.getByRole("img", { name: "person@gen.new" }),
     ).toBeInTheDocument()
     expect(screen.getByRole("button", { name: "Settings" })).toBeInTheDocument()
     expect(screen.queryByText("Delete account")).not.toBeInTheDocument()

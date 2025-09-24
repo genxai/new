@@ -248,7 +248,7 @@ function main() {
   const resendApiKey = sanitize(envFile.get("RESEND_API_KEY"))
   const mailFrom = sanitize(
     envFile.get("MAIL_FROM"),
-    "Test <onboarding@example.com>",
+    "Test <onboarding@gen.new>",
   )
   const brandName = sanitize(envFile.get("BRAND_NAME"))
   const brandLogoUrl = sanitize(envFile.get("BRAND_LOGO_URL"))

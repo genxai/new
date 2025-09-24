@@ -73,12 +73,12 @@ describe("rotatePassphrase", () => {
 
     getUserIdentitySpy.mockResolvedValue({
       subject: "user_1",
-      email: "primary@example.com",
+      email: "primary@gen.new",
       name: "Primary User",
     })
     getUserSpy.mockResolvedValue({
       id: "user_1",
-      email: "primary@example.com",
+      email: "primary@gen.new",
       name: "Primary User",
     })
   })
@@ -86,7 +86,7 @@ describe("rotatePassphrase", () => {
   it("rejects passphrases containing identity metadata and logs the rejection", async () => {
     await expect(
       rotatePassphraseMutation._handler(ctx, {
-        passphrase: "primary@example.com-2025!",
+        passphrase: "primary@gen.new-2025!",
       }),
     ).rejects.toBeInstanceOf(PassphraseValidationError)
 
