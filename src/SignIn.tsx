@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react"
-import { useNavigate } from "react-router-dom"
+import { Link, useNavigate } from "react-router-dom"
 import { useConvexAuth } from "convex/react"
-import { Loader2 } from "lucide-react"
+import { Home, Loader2 } from "lucide-react"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 
@@ -154,7 +154,19 @@ export default function SignIn() {
   }
 
   return (
-    <PublicPageShell contentClassName="py-6 sm:py-10">
+    <PublicPageShell
+      contentClassName="py-6 sm:py-10"
+      brand={
+        <Button
+          render={<Link to="/" />}
+          variant="ghost"
+          size="icon"
+          aria-label="Go to home"
+        >
+          <Home className="size-5" aria-hidden />
+        </Button>
+      }
+    >
       <div className="mx-auto flex h-full w-full max-w-md items-center justify-center">
         <Card className="w-full border shadow-sm">
           <CardHeader className="space-y-4">
