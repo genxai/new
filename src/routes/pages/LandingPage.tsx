@@ -1,10 +1,11 @@
 import { useState } from "react"
 import { useNavigate, Link } from "react-router-dom"
-import { useConvexAuth } from "convex/react"
+import { useAction, useConvexAuth, useQuery } from "convex/react"
 import { Github, UserRound } from "lucide-react"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { toast } from "@/lib/toast"
+import { api } from "../../../convex/_generated/api"
 
 type AuthActionProps = {
   isAuthenticated: boolean
@@ -48,8 +49,9 @@ export default function LandingPage() {
   const [prompt, setPrompt] = useState("")
   const navigate = useNavigate()
   const { isAuthenticated, isLoading } = useConvexAuth()
+  const generateImage = useAction(api.images.generateImage)
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     const trimmedPrompt = prompt.trim()
     if (!trimmedPrompt) {
@@ -57,13 +59,16 @@ export default function LandingPage() {
       return
     }
 
+    const result = await generateImage({ prompt: trimmedPrompt })
+    console.log("Image generation result:", result)
+
     // For now, just navigate to sign-in with the prompt
     // Later you can modify this to handle the generation
-    navigate("/auth", { state: { prompt: trimmedPrompt } })
-    toast.info({
-      title: "Sign in required",
-      description: "Sign in to start generating your free images.",
-    })
+    // navigate("/auth", { state: { prompt: trimmedPrompt } })
+    // toast.info({
+    //   title: "Sign in required",
+    //   description: "Sign in to start generating your free images.",
+    // })
   }
 
   return (
@@ -144,6 +149,102 @@ export default function LandingPage() {
           ) : null}
         </div>
       </main>
+
+      <GenerationsGrid />
+    </div>
+  )
+}
+
+function GenerationsGrid() {
+  const generations = useQuery(api.images.getUserGenerations) || []
+
+  if (!generations?.length) {
+    return (
+      <div className="max-w-3xl mx-auto px-4 pb-8">
+        <div className="text-center py-12 bg-white rounded-lg border">
+          <p className="text-gray-500">No images yet. Generate one above!</p>
+        </div>
+      </div>
+    )
+  }
+
+  return (
+    <div className="max-w-5xl mx-auto px-4 pb-8">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {generations.map((g) => (
+          <div
+            key={g._id}
+            className="bg-white rounded-lg border overflow-hidden"
+          >
+            {/* Preview section */}
+            <div className="aspect-square bg-gray-100 flex items-center justify-center">
+              {g.status === "pending" && (
+                <div className="text-center">
+                  <div className="animate-spin rounded-full h-8 w-8 border-2 border-gray-300 border-t-transparent mx-auto mb-2" />
+                  <p className="text-sm text-gray-500">Generating…</p>
+                </div>
+              )}
+
+              {g.status === "failed" && (
+                <div className="text-center p-4">
+                  <p className="text-sm text-red-500">Generation failed</p>
+                  {g.error && (
+                    <p className="text-xs text-gray-400 mt-1">{g.error}</p>
+                  )}
+                </div>
+              )}
+
+              {g.status === "completed" && g.imageUrls?.length ? (
+                g.imageUrls.length === 1 ? (
+                  // Single image — fill container
+                  <img
+                    src={g.imageUrls[0]}
+                    alt={g.prompt}
+                    className="w-full h-full object-cover"
+                    loading="lazy"
+                  />
+                ) : (
+                  // Multiple images — small grid
+                  <div className="grid grid-cols-2 gap-2 w-full h-full p-2">
+                    {g.imageUrls.map((url, i) => (
+                      <img
+                        key={i}
+                        src={url}
+                        alt={`${g.prompt} - ${i + 1}`}
+                        className="w-full h-full object-cover rounded"
+                        loading="lazy"
+                      />
+                    ))}
+                  </div>
+                )
+              ) : null}
+            </div>
+
+            {/* Info section */}
+            <div className="p-4">
+              <p className="text-sm font-medium text-gray-800">Prompt</p>
+              <p className="text-sm text-gray-600 mb-2 line-clamp-2">
+                {g.prompt}
+              </p>
+
+              {g.description && (
+                <>
+                  <p className="text-sm font-medium text-gray-800">
+                    Description
+                  </p>
+                  <p className="text-xs text-gray-500 mb-2 line-clamp-3">
+                    {g.description}
+                  </p>
+                </>
+              )}
+
+              <p className="text-xs text-gray-400">
+                {new Date(g._creationTime).toLocaleDateString()}
+              </p>
+            </div>
+          </div>
+        ))}
+      </div>
     </div>
   )
 }

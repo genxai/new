@@ -61,6 +61,35 @@ const schema = defineSchema({
   })
     .index("by_keyHash", ["keyHash"])
     .index("by_ipHash", ["ipHash"]),
+  imageGenerations: defineTable({
+    userId: v.string(),
+    prompt: v.string(),
+
+    status: v.union(
+      v.literal("pending"),
+      v.literal("completed"),
+      v.literal("failed"),
+    ),
+    description: v.optional(v.string()),
+    error: v.optional(v.string()),
+
+    storageIds: v.optional(v.array(v.id("_storage"))),
+
+    model: v.optional(v.string()),
+    provider: v.optional(v.string()),
+    seed: v.optional(v.number()),
+    imageMeta: v.optional(
+      v.array(
+        v.object({
+          mediaType: v.string(),
+          size: v.optional(v.number()),
+          name: v.optional(v.string()),
+        }),
+      ),
+    ),
+  })
+    .index("by_user", ["userId"])
+    .index("by_status", ["status"]),
 })
 
 export default schema
