@@ -208,9 +208,7 @@ export const getGenerationUsage = query({
   },
   handler: async (ctx, args) => {
     const providedUserId = args.userId
-    const identity = providedUserId
-      ? null
-      : await ctx.auth.getUserIdentity()
+    const identity = providedUserId ? null : await ctx.auth.getUserIdentity()
     const resolvedUserId = providedUserId
       ? providedUserId
       : identity?.subject

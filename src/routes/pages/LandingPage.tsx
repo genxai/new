@@ -334,7 +334,20 @@ export default function LandingPage() {
             )}
           </div>
 
-          <form onSubmit={handleSubmit} className="space-y-3">
+          <form
+            onSubmit={handleSubmit}
+            className="space-y-3"
+            onClick={(event) => {
+              const target = event.target as HTMLElement
+              if (target.closest("input,button")) {
+                return
+              }
+              const input = event.currentTarget.querySelector(
+                "input",
+              ) as HTMLInputElement | null
+              input?.focus()
+            }}
+          >
             <div className="flex items-center gap-2">
               <Input
                 type="text"
@@ -359,6 +372,7 @@ export default function LandingPage() {
                     ? "Switch to text mode"
                     : "Switch to image mode"
                 }
+                className="cursor-pointer"
               >
                 <ImageIcon
                   className={mode === "image" ? "text-primary-foreground" : ""}
@@ -371,7 +385,7 @@ export default function LandingPage() {
             </div>
             <Button
               type="submit"
-              className="w-full"
+              className="w-full cursor-pointer"
               disabled={
                 isGenerating ||
                 (!isAuthenticated && !clientId && mode === "image")
