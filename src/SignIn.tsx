@@ -178,6 +178,7 @@ export default function SignIn() {
   return (
     <PublicPageShell
       contentClassName="py-6 sm:py-10"
+      headerContainerClassName="mx-0 max-w-none"
       brand={
         <Button
           render={<Link to="/" />}

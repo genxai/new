@@ -10,6 +10,7 @@ type PublicPageShellProps = PropsWithChildren<{
   brand?: ReactNode
   homeHref?: string
   homeLabel?: string
+  headerContainerClassName?: string
 }>
 
 export function PublicPageShell({
@@ -19,6 +20,7 @@ export function PublicPageShell({
   contentClassName,
   homeHref = "/",
   homeLabel = "",
+  headerContainerClassName,
 }: PublicPageShellProps) {
   const resolvedBrand = brand ?? (
     <Link
@@ -33,7 +35,12 @@ export function PublicPageShell({
   return (
     <div className={cn("min-h-dvh bg-muted/15", className)}>
       <header className="border-b bg-background/80 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-        <div className="mx-auto flex w-full max-w-5xl items-center justify-between px-4 py-4 sm:px-6 lg:px-8">
+        <div
+          className={cn(
+            "mx-auto flex w-full max-w-5xl items-center justify-between px-4 py-4 sm:px-6 lg:px-8",
+            headerContainerClassName,
+          )}
+        >
           {resolvedBrand}
           <ThemeToggle />
         </div>
