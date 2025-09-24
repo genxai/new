@@ -37,6 +37,12 @@ export const SignInSchema = z.object({
 
 export type SignInValues = z.infer<typeof SignInSchema>
 
+export const SignInPasswordSchema = SignInSchema.extend({
+  password: passphraseSchema,
+})
+
+export type SignInPasswordValues = z.infer<typeof SignInPasswordSchema>
+
 export const SignUpSchema = z
   .object({
     username: usernameDisplaySchema,

@@ -153,7 +153,7 @@ export default function LandingPage() {
       } else if (usage.imageTotal >= FREE_AUTH_GENERATIONS) {
         toast.info({
           title: "Free limit reached",
-          description: "You've used all free images. Check back later!",
+          description: "You've used all free images. The limit resets in 1 day.",
         })
         return
       }
@@ -180,7 +180,7 @@ export default function LandingPage() {
       } else if (usage.textCount >= limit) {
         toast.info({
           title: "Free limit reached",
-          description: "You've used all free text messages. Check back later!",
+          description: "You've used all free text messages. The limit resets in 1 day.",
         })
         return
       }

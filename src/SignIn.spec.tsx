@@ -7,6 +7,7 @@ import {
   render,
   screen,
   waitFor,
+  within,
 } from "@testing-library/react"
 import { MemoryRouter, Route, Routes, useLocation } from "react-router-dom"
 
@@ -16,6 +17,7 @@ import { ThemeProvider } from "@/providers/theme-provider"
 const useConvexAuthMock = vi.fn()
 const sendVerificationOtpMock = vi.fn()
 const signInEmailOtpMock = vi.fn()
+const signInEmailPasswordMock = vi.fn()
 const { toastSuccessMock, toastErrorMock } = vi.hoisted(() => ({
   toastSuccessMock: vi.fn(),
   toastErrorMock: vi.fn(),
@@ -35,6 +37,8 @@ vi.mock("@/lib/auth-client", () => ({
     signIn: {
       emailOtp: (args: unknown, options?: any) =>
         signInEmailOtpMock(args, options),
+      email: (args: unknown, options?: any) =>
+        signInEmailPasswordMock(args, options),
     },
     emailOtp: {
       sendVerificationOtp: (args: unknown, options?: any) =>
@@ -85,6 +89,7 @@ beforeEach(() => {
   useConvexAuthMock.mockReset()
   sendVerificationOtpMock.mockReset()
   signInEmailOtpMock.mockReset()
+  signInEmailPasswordMock.mockReset()
   toastSuccessMock.mockReset()
   toastErrorMock.mockReset()
 
@@ -104,6 +109,13 @@ beforeEach(() => {
     options?.onRequest?.()
     options?.onSuccess?.()
   })
+
+  signInEmailPasswordMock.mockImplementation(
+    async (_args: unknown, options) => {
+      options?.onRequest?.()
+      options?.onSuccess?.()
+    },
+  )
 
   window.matchMedia = vi.fn().mockImplementation((query: string) => ({
     matches: false,
@@ -147,11 +159,13 @@ describe("SignIn", () => {
   it("validates email before sending a verification code", async () => {
     renderWithProviders(<SignIn />)
 
-    fireEvent.change(screen.getByLabelText(/email/i), {
+    const otpPanel = screen.getByRole("tabpanel", { name: /email code/i })
+
+    fireEvent.change(within(otpPanel).getByLabelText(/email/i), {
       target: { value: "invalid" },
     })
 
-    const sendButton = screen.getByRole("button", {
+    const sendButton = within(otpPanel).getByRole("button", {
       name: /send verification code/i,
     })
 
@@ -168,11 +182,13 @@ describe("SignIn", () => {
   it("requests a verification code for a valid email", async () => {
     renderWithProviders(<SignIn />)
 
-    fireEvent.change(screen.getByLabelText(/email/i), {
+    const otpPanel = screen.getByRole("tabpanel", { name: /email code/i })
+
+    fireEvent.change(within(otpPanel).getByLabelText(/email/i), {
       target: { value: "ada@gen.new" },
     })
 
-    const sendButton = screen.getByRole("button", {
+    const sendButton = within(otpPanel).getByRole("button", {
       name: /send verification code/i,
     })
 
@@ -190,29 +206,37 @@ describe("SignIn", () => {
       )
     })
 
-    expect(screen.getByLabelText(/verification code/i)).toBeInTheDocument()
+    expect(
+      within(otpPanel).getByLabelText(/verification code/i),
+    ).toBeInTheDocument()
   })
 
   it("verifies the code after it has been sent", async () => {
     renderWithProviders(<SignIn />)
 
-    fireEvent.change(screen.getByLabelText(/email/i), {
+    const otpPanel = screen.getByRole("tabpanel", { name: /email code/i })
+
+    fireEvent.change(within(otpPanel).getByLabelText(/email/i), {
       target: { value: "ada@gen.new" },
     })
 
     fireEvent.click(
-      screen.getByRole("button", { name: /send verification code/i }),
+      within(otpPanel).getByRole("button", {
+        name: /send verification code/i,
+      }),
     )
 
     await waitFor(() => {
       expect(sendVerificationOtpMock).toHaveBeenCalled()
     })
 
-    fireEvent.change(screen.getByLabelText(/verification code/i), {
+    fireEvent.change(within(otpPanel).getByLabelText(/verification code/i), {
       target: { value: "123456" },
     })
 
-    fireEvent.click(screen.getByRole("button", { name: /verify code/i }))
+    fireEvent.click(
+      within(otpPanel).getByRole("button", { name: /verify code/i }),
+    )
 
     await waitFor(() => {
       expect(signInEmailOtpMock).toHaveBeenCalledTimes(1)
@@ -228,25 +252,69 @@ describe("SignIn", () => {
   it("requires the verification code before submitting", async () => {
     renderWithProviders(<SignIn />)
 
-    fireEvent.change(screen.getByLabelText(/email/i), {
+    const otpPanel = screen.getByRole("tabpanel", { name: /email code/i })
+
+    fireEvent.change(within(otpPanel).getByLabelText(/email/i), {
       target: { value: "ada@gen.new" },
     })
 
     fireEvent.click(
-      screen.getByRole("button", { name: /send verification code/i }),
+      within(otpPanel).getByRole("button", {
+        name: /send verification code/i,
+      }),
     )
 
     await waitFor(() => {
       expect(sendVerificationOtpMock).toHaveBeenCalled()
     })
 
-    fireEvent.click(screen.getByRole("button", { name: /verify code/i }))
+    fireEvent.click(
+      within(otpPanel).getByRole("button", { name: /verify code/i }),
+    )
 
     await waitFor(() => {
       expect(signInEmailOtpMock).not.toHaveBeenCalled()
       expect(toastErrorMock).toHaveBeenCalledWith(
         "Enter the verification code.",
       )
+    })
+  })
+
+  it("signs in with password when selected", async () => {
+    renderWithProviders(<SignIn />)
+
+    fireEvent.click(screen.getByRole("tab", { name: /password/i }))
+
+    const passwordPanel = screen.getByRole("tabpanel", {
+      name: /password/i,
+    })
+
+    fireEvent.change(
+      within(passwordPanel).getByLabelText(/email/i),
+      {
+        target: { value: "ada@gen.new" },
+      },
+    )
+
+    fireEvent.change(
+      within(passwordPanel).getByLabelText(/password/i),
+      {
+        target: { value: "hunter200" },
+      },
+    )
+
+    fireEvent.click(
+      within(passwordPanel).getByRole("button", { name: /sign in/i }),
+    )
+
+    await waitFor(() => {
+      expect(signInEmailPasswordMock).toHaveBeenCalledTimes(1)
+    })
+
+    const [payload] = signInEmailPasswordMock.mock.calls[0] ?? []
+    expect(payload).toMatchObject({
+      email: "ada@gen.new",
+      password: "hunter200",
     })
   })
 })

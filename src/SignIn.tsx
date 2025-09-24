@@ -23,15 +23,22 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/form"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { authClient } from "@/lib/auth-client"
 import { toast } from "@/lib/toast"
 import { SessionFallback } from "@/routes/guards"
-import { SignInSchema, type SignInValues } from "../shared/auth-schemas"
+import {
+  SignInPasswordSchema,
+  SignInSchema,
+  type SignInPasswordValues,
+  type SignInValues,
+} from "../shared/auth-schemas"
 import { pickIdentityPreviewSample } from "../shared/identity"
 import { PublicPageShell } from "@/components/PublicPageShell"
 import { resolveVerificationSuccessUrl } from "@/lib/verification"
 
 const COOLDOWN_SECONDS = 30
+type SignInMethod = "otp" | "password"
 
 export default function SignIn() {
   const { isAuthenticated, isLoading } = useConvexAuth()
@@ -49,9 +56,22 @@ export default function SignIn() {
   const [sendingCode, setSendingCode] = useState(false)
   const [verifyingCode, setVerifyingCode] = useState(false)
   const [cooldownRemaining, setCooldownRemaining] = useState(0)
+  const [method, setMethod] = useState<SignInMethod>("otp")
+  const passwordForm = useForm<SignInPasswordValues>({
+    resolver: zodResolver(SignInPasswordSchema),
+    defaultValues: {
+      email: "",
+      password: "",
+    },
+    mode: "onSubmit",
+    reValidateMode: "onSubmit",
+  })
+  const [passwordLoading, setPasswordLoading] = useState(false)
   const navigate = useNavigate()
   const verificationSuccessUrl = resolveVerificationSuccessUrl()
   const emailValue = form.watch("email")
+  const passwordEmailValue = passwordForm.watch("email")
+  const passwordValue = passwordForm.watch("password")
 
   useEffect(() => {
     if (cooldownRemaining <= 0) {
@@ -171,6 +191,43 @@ export default function SignIn() {
     }
   })
 
+  const signInWithPassword = passwordForm.handleSubmit(
+    async ({ email, password }) => {
+      let handledError = false
+      try {
+        await authClient.signIn.email(
+          {
+            email: email.trim(),
+            password,
+            callbackURL: verificationSuccessUrl,
+          },
+          {
+            onRequest: () => {
+              setPasswordLoading(true)
+            },
+            onSuccess: () => {
+              setPasswordLoading(false)
+            },
+            onError: (ctx) => {
+              handledError = true
+              setPasswordLoading(false)
+              toast.error(ctx.error.message)
+            },
+          },
+        )
+      } catch (error) {
+        setPasswordLoading(false)
+        if (!handledError) {
+          const message =
+            error instanceof Error
+              ? error.message
+              : "Unable to sign in with your password."
+          toast.error(message)
+        }
+      }
+    },
+  )
+
   if (isLoading) {
     return <SessionFallback />
   }
@@ -197,115 +254,205 @@ export default function SignIn() {
               Auth
             </CardTitle>
             <CardDescription className="text-lg text-muted-foreground">
-              Sign in with your email. We&apos;ll send you a verification code
-              to finish signing in.
+              Sign in with your email using a one-time code or your password.
             </CardDescription>
           </CardHeader>
 
           <CardContent className="space-y-6">
-            <Form {...form}>
-              <form
-                className="space-y-6"
-                noValidate
-                onSubmit={(event) => {
-                  event.preventDefault()
-                  void verifyCode()
-                }}
-              >
-                <div className="space-y-4">
-                  <FormField
-                    control={form.control}
-                    name="email"
-                    render={({ field, fieldState }) => (
-                      <FormItem className="space-y-2">
-                        <FormLabel htmlFor="email">Email</FormLabel>
-                        <FormControl>
-                          <Input
-                            {...field}
-                            id="email"
-                            type="email"
-                            placeholder={`e.g. ${identitySample.email}`}
-                            required
-                            autoComplete="email"
-                            aria-invalid={
-                              fieldState.invalid ? "true" : undefined
-                            }
-                            onChange={(event) => {
-                              if (otpSent) {
-                                setOtp("")
-                                setOtpSent(false)
-                              }
-                              field.onChange(event)
-                            }}
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
+            <Tabs
+              value={method}
+              onValueChange={(value) => setMethod(value as SignInMethod)}
+              className="space-y-6"
+            >
+              <TabsList className="grid grid-cols-2 gap-2">
+                <TabsTrigger value="otp">Email code</TabsTrigger>
+                <TabsTrigger value="password">Password</TabsTrigger>
+              </TabsList>
 
-                  {otpSent ? (
-                    <div className="space-y-2">
-                      <Label htmlFor="otp">Verification code</Label>
-                      <Input
-                        id="otp"
-                        type="text"
-                        placeholder="Enter verification code"
-                        inputMode="numeric"
-                        pattern="[0-9]*"
-                        maxLength={6}
-                        required
-                        value={otp}
-                        onChange={(event) => {
-                          setOtp(event.target.value)
-                        }}
-                      />
-                    </div>
-                  ) : null}
-                </div>
-
-                <div className="space-y-3">
-                  <Button
-                    type="button"
-                    className="w-full"
-                    disabled={
-                      sendingCode || cooldownRemaining > 0 || !emailValue
-                    }
-                    onClick={() => {
-                      void sendVerificationCode()
+              <TabsContent value="otp" className="space-y-6">
+                <Form {...form}>
+                  <form
+                    className="space-y-6"
+                    noValidate
+                    onSubmit={(event) => {
+                      event.preventDefault()
+                      void verifyCode()
                     }}
                   >
-                    {sendingCode ? (
-                      <Loader2
-                        className="mr-2 size-4 animate-spin"
-                        aria-hidden
+                    <div className="space-y-4">
+                      <FormField
+                        control={form.control}
+                        name="email"
+                        render={({ field, fieldState }) => (
+                          <FormItem className="space-y-2">
+                            <FormLabel htmlFor="email">Email</FormLabel>
+                            <FormControl>
+                              <Input
+                                {...field}
+                                id="email"
+                                type="email"
+                                placeholder={`e.g. ${identitySample.email}`}
+                                required
+                                autoComplete="email"
+                                aria-invalid={
+                                  fieldState.invalid ? "true" : undefined
+                                }
+                                onChange={(event) => {
+                                  if (otpSent) {
+                                    setOtp("")
+                                    setOtpSent(false)
+                                  }
+                                  field.onChange(event)
+                                }}
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
                       />
-                    ) : null}
-                    {sendingCode
-                      ? "Sending"
-                      : cooldownRemaining > 0
-                        ? `Resend in ${cooldownRemaining}s`
-                        : "Send verification code"}
-                  </Button>
 
-                  {otpSent ? (
+                      {otpSent ? (
+                        <div className="space-y-2">
+                          <Label htmlFor="otp">Verification code</Label>
+                          <Input
+                            id="otp"
+                            type="text"
+                            placeholder="Enter verification code"
+                            inputMode="numeric"
+                            pattern="[0-9]*"
+                            maxLength={6}
+                            required
+                            value={otp}
+                            onChange={(event) => {
+                              setOtp(event.target.value)
+                            }}
+                          />
+                        </div>
+                      ) : null}
+                    </div>
+
+                    <div className="space-y-3">
+                      <Button
+                        type="button"
+                        className="w-full"
+                        disabled={
+                          sendingCode || cooldownRemaining > 0 || !emailValue
+                        }
+                        onClick={() => {
+                          void sendVerificationCode()
+                        }}
+                      >
+                        {sendingCode ? (
+                          <Loader2
+                            className="mr-2 size-4 animate-spin"
+                            aria-hidden
+                          />
+                        ) : null}
+                        {sendingCode
+                          ? "Sending"
+                          : cooldownRemaining > 0
+                            ? `Resend in ${cooldownRemaining}s`
+                            : "Send verification code"}
+                      </Button>
+
+                      {otpSent ? (
+                        <Button
+                          type="submit"
+                          className="w-full"
+                          disabled={verifyingCode}
+                        >
+                          {verifyingCode ? (
+                            <Loader2
+                              className="mr-2 size-4 animate-spin"
+                              aria-hidden
+                            />
+                          ) : null}
+                          Verify code
+                        </Button>
+                      ) : null}
+                    </div>
+                  </form>
+                </Form>
+              </TabsContent>
+
+              <TabsContent value="password" className="space-y-6">
+                <Form {...passwordForm}>
+                  <form
+                    className="space-y-6"
+                    noValidate
+                    onSubmit={(event) => {
+                      event.preventDefault()
+                      void signInWithPassword()
+                    }}
+                  >
+                    <div className="space-y-4">
+                      <FormField
+                        control={passwordForm.control}
+                        name="email"
+                        render={({ field, fieldState }) => (
+                          <FormItem className="space-y-2">
+                            <FormLabel htmlFor="password-email">Email</FormLabel>
+                            <FormControl>
+                              <Input
+                                {...field}
+                                id="password-email"
+                                type="email"
+                                placeholder={`e.g. ${identitySample.email}`}
+                                required
+                                autoComplete="email"
+                                aria-invalid={
+                                  fieldState.invalid ? "true" : undefined
+                                }
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+
+                      <FormField
+                        control={passwordForm.control}
+                        name="password"
+                        render={({ field, fieldState }) => (
+                          <FormItem className="space-y-2">
+                            <FormLabel htmlFor="password">Password</FormLabel>
+                            <FormControl>
+                              <Input
+                                {...field}
+                                id="password"
+                                type="password"
+                                placeholder="Enter your password"
+                                required
+                                autoComplete="current-password"
+                                aria-invalid={
+                                  fieldState.invalid ? "true" : undefined
+                                }
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </div>
+
                     <Button
                       type="submit"
                       className="w-full"
-                      disabled={verifyingCode}
+                      disabled={
+                        passwordLoading ||
+                        !passwordEmailValue.trim() ||
+                        !passwordValue.trim()
+                      }
                     >
-                      {verifyingCode ? (
-                        <Loader2
-                          className="mr-2 size-4 animate-spin"
-                          aria-hidden
-                        />
+                      {passwordLoading ? (
+                        <Loader2 className="mr-2 size-4 animate-spin" aria-hidden />
                       ) : null}
-                      Verify code
+                      Sign in
                     </Button>
-                  ) : null}
-                </div>
-              </form>
-            </Form>
+                  </form>
+                </Form>
+              </TabsContent>
+            </Tabs>
           </CardContent>
 
           {/* TODO: add later */}
