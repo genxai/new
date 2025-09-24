@@ -31,6 +31,8 @@ import { pickIdentityPreviewSample } from "../shared/identity"
 import { PublicPageShell } from "@/components/PublicPageShell"
 import { resolveVerificationSuccessUrl } from "@/lib/verification"
 
+const COOLDOWN_SECONDS = 30
+
 export default function SignIn() {
   const { isAuthenticated, isLoading } = useConvexAuth()
   const [identitySample] = useState(() => pickIdentityPreviewSample())
@@ -46,9 +48,24 @@ export default function SignIn() {
   const [otpSent, setOtpSent] = useState(false)
   const [sendingCode, setSendingCode] = useState(false)
   const [verifyingCode, setVerifyingCode] = useState(false)
+  const [cooldownRemaining, setCooldownRemaining] = useState(0)
   const navigate = useNavigate()
   const verificationSuccessUrl = resolveVerificationSuccessUrl()
   const emailValue = form.watch("email")
+
+  useEffect(() => {
+    if (cooldownRemaining <= 0) {
+      return
+    }
+
+    const timer = window.setInterval(() => {
+      setCooldownRemaining((seconds) => (seconds > 0 ? seconds - 1 : 0))
+    }, 1000)
+
+    return () => {
+      window.clearInterval(timer)
+    }
+  }, [cooldownRemaining])
 
   useEffect(() => {
     if (isLoading) {
@@ -60,6 +77,10 @@ export default function SignIn() {
   }, [isAuthenticated, isLoading, navigate])
 
   const sendVerificationCode = async () => {
+    if (cooldownRemaining > 0 || sendingCode) {
+      return
+    }
+
     const isEmailValid = await form.trigger("email")
     if (!isEmailValid) {
       form.setFocus("email")
@@ -84,6 +105,7 @@ export default function SignIn() {
             setOtpSent(true)
             setOtp("")
             toast.success("Verification code sent. Check your email.")
+            setCooldownRemaining(COOLDOWN_SECONDS)
           },
           onError: (ctx) => {
             handledError = true
@@ -245,7 +267,7 @@ export default function SignIn() {
                   <Button
                     type="button"
                     className="w-full"
-                    disabled={sendingCode || !emailValue}
+                    disabled={sendingCode || cooldownRemaining > 0 || !emailValue}
                     onClick={() => {
                       void sendVerificationCode()
                     }}
@@ -256,7 +278,11 @@ export default function SignIn() {
                         aria-hidden
                       />
                     ) : null}
-                    Send verification code
+                    {sendingCode
+                      ? "Sending"
+                      : cooldownRemaining > 0
+                        ? `Resend in ${cooldownRemaining}s`
+                        : "Send verification code"}
                   </Button>
 
                   {otpSent ? (
