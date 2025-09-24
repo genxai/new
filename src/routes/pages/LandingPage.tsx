@@ -406,20 +406,6 @@ export default function LandingPage() {
                   : "Send"}
             </Button>
           </form>
-
-          {!isLoading && !isAuthenticated ? (
-            <div className="rounded-lg border border-border/40 bg-muted/20 p-4 text-center">
-              <p className="text-sm text-muted-foreground">
-                <Link
-                  to="/auth"
-                  className="font-medium text-primary underline-offset-2 hover:underline"
-                >
-                  Sign in
-                </Link>{" "}
-                to unlock extra image generations.
-              </p>
-            </div>
-          ) : null}
         </div>
       </main>
     </div>
