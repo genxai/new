@@ -122,7 +122,7 @@ afterEach(() => {
 })
 
 describe("SignIn", () => {
-  it("redirects authenticated users to settings", async () => {
+  it("redirects authenticated users to home", async () => {
     useConvexAuthMock.mockReturnValue({
       isAuthenticated: true,
       isLoading: false,
@@ -134,13 +134,13 @@ describe("SignIn", () => {
         <LocationObserver onChange={(pathname) => (currentPath = pathname)} />
         <Routes>
           <Route path="/auth" element={<SignIn />} />
-          <Route path="/settings" element={<div>settings</div>} />
+          <Route path="/" element={<div>home</div>} />
         </Routes>
       </>,
     )
 
     await waitFor(() => {
-      expect(currentPath).toBe("/settings")
+      expect(currentPath).toBe("/")
     })
   })
 

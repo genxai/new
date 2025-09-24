@@ -72,7 +72,7 @@ export default function SignIn() {
       return
     }
     if (isAuthenticated) {
-      navigate("/settings", { replace: true })
+      navigate("/", { replace: true })
     }
   }, [isAuthenticated, isLoading, navigate])
 
