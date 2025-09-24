@@ -5,18 +5,14 @@ import { readMailConfigFromEnv } from "../shared/config"
 import type { MailConfig } from "../shared/config"
 import { normalizeMailUrl } from "../shared/mail/url"
 import type { GenericCtx } from "@convex-dev/better-auth"
-import {
-  isActionCtx,
-  isMutationCtx,
-  requireMutationCtx,
-} from "@convex-dev/better-auth/utils"
+import type { isActionCtx, isMutationCtx } from "@convex-dev/better-auth/utils"
 import { components } from "./_generated/api"
 import type { DataModel } from "./_generated/dataModel"
 import MagicLinkEmail from "./emails/magicLink"
 import ResetPasswordEmail from "./emails/resetPassword"
 import VerifyEmail from "./emails/verifyEmail"
 import VerifyOTP from "./emails/verifyOTP"
-import {
+import type {
   GenericActionCtx,
   GenericDataModel,
   GenericMutationCtx,
