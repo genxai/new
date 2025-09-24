@@ -276,7 +276,7 @@ export default function LandingPage() {
   }
 
   return (
-    <div className="min-h-dvh bg-background text-foreground flex flex-col">
+    <div className="h-dvh bg-background text-foreground flex flex-col overflow-hidden">
       <header className="border-b border-border/40">
         <div className="flex w-full items-center justify-between px-4 py-4 sm:px-6 lg:px-8">
           <SiteBrand />
@@ -308,8 +308,8 @@ export default function LandingPage() {
           </div>
         </div>
       </header>
-      <main className="flex-1 flex flex-col px-4 py-10">
-        <div className="w-full max-w-3xl mx-auto flex-1 flex flex-col gap-6">
+      <main className="flex-1 flex flex-col px-4 py-10 overflow-hidden">
+        <div className="w-full max-w-3xl mx-auto flex-1 flex flex-col gap-6 overflow-hidden">
           <div className="text-center space-y-2">
             <h1 className="text-3xl font-bold">Generate anything</h1>
             <p className="text-muted-foreground">
