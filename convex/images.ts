@@ -268,7 +268,9 @@ export const generateTextResponse = action({
       clientId: args.clientId,
     })
 
-    const limit = identity ? FREE_GENERATION_LIMITS.authenticated : FREE_GENERATION_LIMITS.anonymous
+    const limit = identity
+      ? FREE_GENERATION_LIMITS.authenticated
+      : FREE_GENERATION_LIMITS.anonymous
 
     if (textUsage.textCount >= limit) {
       throw new Error("Free text generation limit reached")
@@ -298,7 +300,8 @@ export const generateTextResponse = action({
       if (!errorMessage) {
         errorMessage = "Model returned no text"
       }
-      text = "Text generation is temporarily unavailable. Please try again later."
+      text =
+        "Text generation is temporarily unavailable. Please try again later."
     }
 
     const success = !isFallback
@@ -320,5 +323,24 @@ export const generateTextResponse = action({
       text,
       isFallback,
     }
+  },
+})
+
+export const logTextInteraction = mutation({
+  args: {
+    userId: v.string(),
+    prompt: v.string(),
+    success: v.boolean(),
+    fallback: v.optional(v.boolean()),
+    error: v.optional(v.string()),
+  },
+  handler: async (ctx, args) => {
+    await ctx.db.insert("textInteractions", {
+      userId: args.userId,
+      prompt: args.prompt,
+      success: args.success,
+      fallback: args.fallback,
+      error: args.error,
+    })
   },
 })

@@ -9,6 +9,7 @@ import { api } from "../../../convex/_generated/api"
 import { useClientId } from "@/hooks/useClientId"
 
 const GUEST_GENERATION_STORAGE_KEY = "gen.new.guest-generations"
+const GUEST_TEXT_STORAGE_KEY = "gen.new.guest-text"
 const FREE_GUEST_GENERATIONS = 1
 const FREE_AUTH_GENERATIONS = 3
 
@@ -82,6 +83,7 @@ export default function LandingPage() {
   const [prompt, setPrompt] = useState("")
   const [isGenerating, setIsGenerating] = useState(false)
   const [guestGenerationCount, setGuestGenerationCount] = useState(0)
+  const [guestTextCount, setGuestTextCount] = useState(0)
   const [mode, setMode] = useState<"text" | "image">("text")
   const [messages, setMessages] = useState<ChatMessage[]>([])
   const navigate = useNavigate()
@@ -94,18 +96,29 @@ export default function LandingPage() {
     [clientId],
   )
   const usageResult = useQuery(api.images.getGenerationUsage, usageArgs)
-  const usage = usageResult ?? { total: 0, completed: 0 }
+  const usage =
+    usageResult ?? ({ imageTotal: 0, completed: 0, textCount: 0 } as const)
 
   useEffect(() => {
     if (typeof window === "undefined") {
       return
     }
 
-    const stored = window.localStorage.getItem(GUEST_GENERATION_STORAGE_KEY)
-    if (stored) {
-      const parsed = Number.parseInt(stored, 10)
+    const storedImages = window.localStorage.getItem(
+      GUEST_GENERATION_STORAGE_KEY,
+    )
+    if (storedImages) {
+      const parsed = Number.parseInt(storedImages, 10)
       if (!Number.isNaN(parsed)) {
         setGuestGenerationCount(parsed)
+      }
+    }
+
+    const storedText = window.localStorage.getItem(GUEST_TEXT_STORAGE_KEY)
+    if (storedText) {
+      const parsed = Number.parseInt(storedText, 10)
+      if (!Number.isNaN(parsed)) {
+        setGuestTextCount(parsed)
       }
     }
   }, [])
@@ -137,10 +150,37 @@ export default function LandingPage() {
           navigate("/auth")
           return
         }
-      } else if (usage.total >= FREE_AUTH_GENERATIONS) {
+      } else if (usage.imageTotal >= FREE_AUTH_GENERATIONS) {
         toast.info({
           title: "Free limit reached",
           description: "You've used all free images. Check back later!",
+        })
+        return
+      }
+    }
+    if (mode === "text") {
+      const limit = isAuthenticated
+        ? FREE_AUTH_GENERATIONS
+        : FREE_GUEST_GENERATIONS
+
+      if (!isAuthenticated) {
+        if (!clientId) {
+          toast.info("Setting up your session, please try again.")
+          return
+        }
+
+        if (guestTextCount >= limit) {
+          toast.info({
+            title: "Create an account",
+            description: "Sign in to keep the conversation going.",
+          })
+          navigate("/auth")
+          return
+        }
+      } else if (usage.textCount >= limit) {
+        toast.info({
+          title: "Free limit reached",
+          description: "You've used all free text messages. Check back later!",
         })
         return
       }
@@ -189,6 +229,17 @@ export default function LandingPage() {
           toast.info(
             "Text generation is temporarily unavailable. Try again later.",
           )
+        }
+
+        if (!isAuthenticated) {
+          const nextTextCount = guestTextCount + 1
+          setGuestTextCount(nextTextCount)
+          if (typeof window !== "undefined") {
+            window.localStorage.setItem(
+              GUEST_TEXT_STORAGE_KEY,
+              String(nextTextCount),
+            )
+          }
         }
       } else {
         if (!clientId) {
@@ -267,6 +318,14 @@ export default function LandingPage() {
               : entry,
           ),
         )
+
+        if (
+          !isAuthenticated &&
+          (errorMessage.includes("Free text generation limit") ||
+            errorMessage.includes("Free generation limit"))
+        ) {
+          navigate("/auth")
+        }
       }
     } finally {
       setIsGenerating(false)
