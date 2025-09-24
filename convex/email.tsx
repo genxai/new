@@ -116,9 +116,6 @@ export const sendOTPVerification = async (
   },
 ) => {
   const mail = getMailConfig()
-  if (mail.preview) {
-    console.log(code)
-  }
   await dispatchEmail({
     ctx,
     mail,
@@ -127,6 +124,9 @@ export const sendOTPVerification = async (
     type: "otpVerification",
     template: <VerifyOTP code={code} brand={mail.brand} />,
   })
+  if (mail.preview) {
+    console.log(`OTP CODE: ${code}`)
+  }
 }
 
 export const sendMagicLink = async (
