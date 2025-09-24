@@ -1,12 +1,13 @@
 import { Resend } from "@convex-dev/resend"
 import { render } from "@react-email/components"
 import type { ReactElement } from "react"
-import { readMailConfigFromEnv, type MailConfig } from "../shared/config"
+import { readMailConfigFromEnv } from "../shared/config"
+import type { MailConfig } from "../shared/config"
 import { normalizeMailUrl } from "../shared/mail/url"
-import { GenericCtx } from "@convex-dev/better-auth"
+import type { GenericCtx } from "@convex-dev/better-auth"
 import { requireMutationCtx } from "@convex-dev/better-auth/utils"
 import { components } from "./_generated/api"
-import { DataModel } from "./_generated/dataModel"
+import type { DataModel } from "./_generated/dataModel"
 import MagicLinkEmail from "./emails/magicLink"
 import ResetPasswordEmail from "./emails/resetPassword"
 import VerifyEmail from "./emails/verifyEmail"
@@ -29,55 +30,125 @@ const dispatchEmail = async ({
   type,
   template,
 }: SendEmailOptions) => {
-  const html = await render(template)
-  const text = await render(template, { plainText: true })
+  console.log("[EMAIL DEBUG] Starting email dispatch for type:", type)
+  console.log("[EMAIL DEBUG] Mail config:", {
+    preview: mail.preview,
+    hasResendApiKey: !!mail.resendApiKey,
+    from: mail.from,
+    errors: mail.errors,
+    resendKeyLength: mail.resendApiKey?.length || 0,
+  })
 
-  if (mail.preview) {
-    console.warn(
-      "MAIL_CONSOLE_PREVIEW=true. Emails are logged but not delivered. Set MAIL_CONSOLE_PREVIEW=false and provide RESEND_API_KEY to send real emails.",
-    )
-    console.log(
-      `[mail preview] ${JSON.stringify(
-        {
+  try {
+    const html = await render(template)
+    const text = await render(template, { plainText: true })
+
+    console.log("[EMAIL DEBUG] Template rendered successfully for", type)
+
+    if (mail.preview) {
+      console.warn(
+        "MAIL_CONSOLE_PREVIEW=true. Emails are logged but not delivered. Set MAIL_CONSOLE_PREVIEW=false and provide RESEND_API_KEY to send real emails.",
+      )
+      console.log(
+        "[mail preview]",
+        JSON.stringify(
+          {
+            type,
+            to,
+            from: mail.from,
+            subject,
+            brand: mail.brand,
+            html,
+            text,
+          },
+          null,
+          2,
+        ),
+      )
+      console.log("[EMAIL DEBUG] Email dispatched in preview mode for", type)
+      return
+    }
+
+    console.log("[EMAIL DEBUG] Attempting to send real email for", type)
+
+    const mutationCtx = requireMutationCtx(ctx)
+
+    if (mail.errors.length > 0) {
+      const errorMsg = `Mail configuration invalid: ${mail.errors.join(" | ")}`
+      console.error("[EMAIL DEBUG] Configuration errors:", mail.errors)
+      throw new Error(errorMsg)
+    }
+
+    if (!mail.resendApiKey) {
+      const errorMsg = "RESEND_API_KEY is required when MAIL_CONSOLE_PREVIEW=false."
+      console.error("[EMAIL DEBUG]", errorMsg)
+      throw new Error(errorMsg)
+    }
+
+    console.log("[EMAIL DEBUG] Creating Resend client with API key length:", mail.resendApiKey.length)
+
+    const resend = new Resend(components.resend, {
+      apiKey: mail.resendApiKey,
+      testMode: false,
+    })
+
+    console.log("[EMAIL DEBUG] Sending email via Resend API:", {
+      from: mail.from,
+      to,
+      subject,
+      type,
+    })
+
+    const result = await resend.sendEmail(mutationCtx, {
+      from: mail.from,
+      to,
+      subject,
+      html,
+      text,
+    })
+
+    console.log("[EMAIL DEBUG] Email sent successfully for", type, result)
+    
+    // Log to Vercel via API endpoint
+    await fetch('/api/log', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        message: `Email sent successfully: ${type}`,
+        level: 'info',
+        context: {
           type,
           to,
           from: mail.from,
           subject,
-          brand: mail.brand,
-          html,
-          text,
-        },
-        null,
-        2,
-      )}`,
-    )
-    return
+          resultId: result || 'unknown',
+        }
+      })
+    }).catch(err => console.warn('Failed to log to Vercel:', err))
+
+  } catch (error) {
+    console.error("[EMAIL DEBUG] Error dispatching email for", type, error)
+    
+    // Log error to Vercel via API endpoint
+    await fetch('/api/log', {
+      method: 'POST', 
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        message: `Email dispatch failed: ${type}`,
+        level: 'error',
+        context: {
+          type,
+          to,
+          from: mail.from,
+          subject,
+          error: error instanceof Error ? error.message : String(error),
+          stack: error instanceof Error ? error.stack : undefined,
+        }
+      })
+    }).catch(err => console.warn('Failed to log error to Vercel:', err))
+    
+    throw error
   }
-
-  const mutationCtx = requireMutationCtx(ctx)
-
-  if (mail.errors.length > 0) {
-    throw new Error(`Mail configuration invalid: ${mail.errors.join(" | ")}`)
-  }
-
-  if (!mail.resendApiKey) {
-    throw new Error(
-      "RESEND_API_KEY is required when MAIL_CONSOLE_PREVIEW=false.",
-    )
-  }
-
-  const resend = new Resend(components.resend, {
-    apiKey: mail.resendApiKey,
-    testMode: false,
-  })
-
-  await resend.sendEmail(mutationCtx, {
-    from: mail.from,
-    to,
-    subject,
-    html,
-    text,
-  })
 }
 
 function getMailConfig(): MailConfig {
@@ -96,9 +167,15 @@ export const sendEmailVerification = async (
     url: string
   },
 ) => {
+  console.log("[EMAIL] sendEmailVerification called for", to)
   const mail = getMailConfig()
   const normalizedUrl = normalizeMailUrl(url)
-  console.log(mail, "email its sending from")
+  console.log("[EMAIL] Mail config for verification:", {
+    preview: mail.preview,
+    from: mail.from,
+    hasApiKey: !!mail.resendApiKey,
+    errors: mail.errors,
+  })
   await dispatchEmail({
     ctx,
     mail,
