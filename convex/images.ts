@@ -1,11 +1,7 @@
 import { v } from "convex/values"
 import { query, mutation, action } from "./_generated/server"
 import { api } from "./_generated/api"
-import { createGateway, generateText } from "ai"
-
-const google = createGateway({
-  apiKey: "",
-})
+import { generateText } from "ai"
 
 export const generateImage = action({
   args: { prompt: v.string() },
@@ -19,7 +15,7 @@ export const generateImage = action({
 
     try {
       const result = await generateText({
-        model: google("google/gemini-2.5-flash-image-preview"),
+        model: "google/gemini-2.5-flash-image-preview",
         providerOptions: {
           google: { responseModalities: ["TEXT", "IMAGE"] },
         },
