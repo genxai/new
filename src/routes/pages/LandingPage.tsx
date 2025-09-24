@@ -4,6 +4,7 @@ import { useConvexAuth } from "convex/react"
 import { Github, UserRound } from "lucide-react"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
+import { toast } from "@/lib/toast"
 
 type AuthActionProps = {
   isAuthenticated: boolean
@@ -54,6 +55,10 @@ export default function LandingPage() {
       // For now, just navigate to sign-in with the prompt
       // Later you can modify this to handle the generation
       navigate("/auth", { state: { prompt } })
+      toast.info({
+        title: "Sign in required",
+        description: "Sign in to start generating your free images.",
+      })
     }
   }
 
