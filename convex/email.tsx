@@ -5,13 +5,22 @@ import { readMailConfigFromEnv } from "../shared/config"
 import type { MailConfig } from "../shared/config"
 import { normalizeMailUrl } from "../shared/mail/url"
 import type { GenericCtx } from "@convex-dev/better-auth"
-import { requireMutationCtx } from "@convex-dev/better-auth/utils"
+import {
+  isActionCtx,
+  isMutationCtx,
+  requireMutationCtx,
+} from "@convex-dev/better-auth/utils"
 import { components } from "./_generated/api"
 import type { DataModel } from "./_generated/dataModel"
 import MagicLinkEmail from "./emails/magicLink"
 import ResetPasswordEmail from "./emails/resetPassword"
 import VerifyEmail from "./emails/verifyEmail"
 import VerifyOTP from "./emails/verifyOTP"
+import {
+  GenericActionCtx,
+  GenericDataModel,
+  GenericMutationCtx,
+} from "convex/server"
 
 interface SendEmailOptions {
   ctx: GenericCtx<DataModel>
@@ -71,7 +80,15 @@ const dispatchEmail = async ({
 
     console.log("[EMAIL DEBUG] Attempting to send real email for", type)
 
-    const mutationCtx = requireMutationCtx(ctx)
+    // const mutationCtx = requireMutationCtx(ctx)
+    const mutationCtx = <DataModel extends GenericDataModel>(
+      ctx: GenericCtx<DataModel>,
+    ): GenericMutationCtx<DataModel> | GenericActionCtx<DataModel> => {
+      if (!isMutationCtx(ctx) && !isActionCtx(ctx)) {
+        throw new Error("Mutation or action context required")
+      }
+      return ctx
+    }
 
     if (mail.errors.length > 0) {
       const errorMsg = `Mail configuration invalid: ${mail.errors.join(" | ")}`
@@ -80,12 +97,16 @@ const dispatchEmail = async ({
     }
 
     if (!mail.resendApiKey) {
-      const errorMsg = "RESEND_API_KEY is required when MAIL_CONSOLE_PREVIEW=false."
+      const errorMsg =
+        "RESEND_API_KEY is required when MAIL_CONSOLE_PREVIEW=false."
       console.error("[EMAIL DEBUG]", errorMsg)
       throw new Error(errorMsg)
     }
 
-    console.log("[EMAIL DEBUG] Creating Resend client with API key length:", mail.resendApiKey.length)
+    console.log(
+      "[EMAIL DEBUG] Creating Resend client with API key length:",
+      mail.resendApiKey.length,
+    )
 
     const resend = new Resend(components.resend, {
       apiKey: mail.resendApiKey,
@@ -108,34 +129,33 @@ const dispatchEmail = async ({
     })
 
     console.log("[EMAIL DEBUG] Email sent successfully for", type, result)
-    
+
     // Log to Vercel via API endpoint
-    await fetch('/api/log', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+    await fetch("/api/log", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         message: `Email sent successfully: ${type}`,
-        level: 'info',
+        level: "info",
         context: {
           type,
           to,
           from: mail.from,
           subject,
-          resultId: result || 'unknown',
-        }
-      })
-    }).catch(err => console.warn('Failed to log to Vercel:', err))
-
+          resultId: result || "unknown",
+        },
+      }),
+    }).catch((err) => console.warn("Failed to log to Vercel:", err))
   } catch (error) {
     console.error("[EMAIL DEBUG] Error dispatching email for", type, error)
-    
+
     // Log error to Vercel via API endpoint
-    await fetch('/api/log', {
-      method: 'POST', 
-      headers: { 'Content-Type': 'application/json' },
+    await fetch("/api/log", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         message: `Email dispatch failed: ${type}`,
-        level: 'error',
+        level: "error",
         context: {
           type,
           to,
@@ -143,10 +163,10 @@ const dispatchEmail = async ({
           subject,
           error: error instanceof Error ? error.message : String(error),
           stack: error instanceof Error ? error.stack : undefined,
-        }
-      })
-    }).catch(err => console.warn('Failed to log error to Vercel:', err))
-    
+        },
+      }),
+    }).catch((err) => console.warn("Failed to log error to Vercel:", err))
+
     throw error
   }
 }
