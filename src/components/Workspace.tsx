@@ -2,29 +2,24 @@
  * PRE-FLIGHT: Follow AGENTS.md hard rules.
  * Workspace surface for managing account tools.
  */
-import { useNavigate } from "react-router-dom"
+import { Link } from "react-router-dom"
 import { useQuery } from "convex/react"
 import { Card, CardHeader, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { ThemeToggle } from "@/components/theme-toggle"
 import { Skeleton } from "@/components/ui/skeleton"
-import { LogOut, Settings as SettingsIcon } from "lucide-react"
+import { Home, LogOut } from "lucide-react"
 import { api } from "../../convex/_generated/api"
 import { authClient } from "@/lib/auth-client"
 
 export default function Workspace() {
-  const navigate = useNavigate()
   const user = useQuery(api.auth.getCurrentUser)
   const me = useQuery(api.identity.getMe, {})
 
   const handleSignOut = () => {
     void authClient.signOut()
   }
-  const handleOpenSettings = () => {
-    navigate("/settings/preferences")
-  }
-
   if (user === undefined || me === undefined) {
     return (
       <Card className="border shadow-sm">
@@ -50,12 +45,18 @@ export default function Workspace() {
 
   return (
     <div className="space-y-8">
-      <header className="space-y-1">
-        <h1 className="text-3xl font-semibold tracking-tight">Settings</h1>
-        <p className="text-sm text-muted-foreground">
-          Manage your account and explore real-time features powered by Convex
-          and Better Auth.
-        </p>
+      <header className="space-y-4">
+        <div className="flex items-center gap-3">
+          <Button
+            variant="ghost"
+            size="icon"
+            render={<Link to="/" />}
+            aria-label="Go to home"
+          >
+            <Home className="size-5" aria-hidden />
+          </Button>
+          <h1 className="text-3xl font-semibold tracking-tight">Settings</h1>
+        </div>
       </header>
 
       <section>
@@ -84,15 +85,6 @@ export default function Workspace() {
               <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-end w-full sm:w-auto">
                 <ThemeToggle />
                 <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
-                  <Button
-                    type="button"
-                    variant="secondary"
-                    className="gap-2"
-                    onClick={handleOpenSettings}
-                  >
-                    <SettingsIcon className="size-4" aria-hidden />
-                    Settings
-                  </Button>
                   <Button
                     type="button"
                     variant="outline"

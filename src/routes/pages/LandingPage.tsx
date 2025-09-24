@@ -10,6 +10,18 @@ type AuthActionProps = {
   isLoading: boolean
 }
 
+function SiteBrand() {
+  return (
+    <Link
+      to="/"
+      className="inline-flex items-center rounded-full border border-border/60 bg-background/80 px-4 py-1 text-sm font-semibold uppercase tracking-[0.32em] text-muted-foreground transition-colors hover:border-primary/50 hover:text-primary"
+      aria-label="Go to gen.new home page"
+    >
+      <span className="font-mono text-foreground">gen.new</span>
+    </Link>
+  )
+}
+
 function AuthAction({ isAuthenticated, isLoading }: AuthActionProps) {
   if (isLoading) {
     return null
@@ -48,7 +60,8 @@ export default function LandingPage() {
   return (
     <div className="min-h-dvh bg-background text-foreground flex flex-col">
       <header className="border-b border-border/40">
-        <div className="mx-auto flex w-full max-w-5xl items-center justify-end px-4 py-4 sm:px-6 lg:px-8">
+        <div className="flex w-full items-center justify-between px-4 py-4 sm:px-6 lg:px-8">
+          <SiteBrand />
           <AuthAction isAuthenticated={isAuthenticated} isLoading={isLoading} />
         </div>
       </header>
