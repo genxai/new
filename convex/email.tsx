@@ -5,7 +5,7 @@ import { readMailConfigFromEnv } from "../shared/config"
 import type { MailConfig } from "../shared/config"
 import { normalizeMailUrl } from "../shared/mail/url"
 import type { GenericCtx } from "@convex-dev/better-auth"
-import type { isActionCtx, isMutationCtx } from "@convex-dev/better-auth/utils"
+import { isActionCtx, isMutationCtx } from "@convex-dev/better-auth/utils"
 import { components } from "./_generated/api"
 import type { DataModel } from "./_generated/dataModel"
 import MagicLinkEmail from "./emails/magicLink"
@@ -116,7 +116,7 @@ const dispatchEmail = async ({
       type,
     })
 
-    const result = await resend.sendEmail(mutationCtx, {
+    const result = await resend.sendEmail(mutationCtx(ctx), {
       from: mail.from,
       to,
       subject,
