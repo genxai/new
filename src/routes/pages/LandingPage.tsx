@@ -1,11 +1,40 @@
 import { useState } from "react"
 import { useNavigate, Link } from "react-router-dom"
+import { useConvexAuth } from "convex/react"
+import { UserRound } from "lucide-react"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
+
+type AuthActionProps = {
+  isAuthenticated: boolean
+  isLoading: boolean
+}
+
+function AuthAction({ isAuthenticated, isLoading }: AuthActionProps) {
+  if (isLoading) {
+    return null
+  }
+
+  if (isAuthenticated) {
+    return (
+      <Button
+        render={<Link to="/settings" />}
+        variant="ghost"
+        size="icon"
+        aria-label="Open settings"
+      >
+        <UserRound className="size-5" aria-hidden />
+      </Button>
+    )
+  }
+
+  return <Button render={<Link to="/auth" />}>Sign In</Button>
+}
 
 export default function LandingPage() {
   const [prompt, setPrompt] = useState("")
   const navigate = useNavigate()
+  const { isAuthenticated, isLoading } = useConvexAuth()
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
@@ -18,6 +47,11 @@ export default function LandingPage() {
 
   return (
     <div className="min-h-dvh bg-background text-foreground flex flex-col">
+      <header className="border-b border-border/40">
+        <div className="mx-auto flex w-full max-w-5xl items-center justify-end px-4 py-4 sm:px-6 lg:px-8">
+          <AuthAction isAuthenticated={isAuthenticated} isLoading={isLoading} />
+        </div>
+      </header>
       <main className="flex-1 flex items-center justify-center px-4">
         <div className="w-full max-w-md space-y-6">
           <div className="text-center space-y-2">
@@ -48,19 +82,19 @@ export default function LandingPage() {
             </Button>
           </form>
 
-          <div className="text-center">
-            <p className="text-sm text-muted-foreground">
-              You get 1 image generation without authentication. To get more,
-              please{" "}
-              <Link
-                to="/auth"
-                className="text-blue-600 underline hover:text-blue-800"
-              >
-                sign in
-              </Link>
-              .
-            </p>
-          </div>
+          {!isLoading && !isAuthenticated ? (
+            <div className="rounded-lg border border-border/40 bg-muted/20 p-4 text-center">
+              <p className="text-sm text-muted-foreground">
+                <Link
+                  to="/auth"
+                  className="font-medium text-primary underline-offset-2 hover:underline"
+                >
+                  Sign in
+                </Link>{" "}
+                to start generating your free images.
+              </p>
+            </div>
+          ) : null}
         </div>
       </main>
     </div>
