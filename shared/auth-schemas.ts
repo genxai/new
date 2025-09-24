@@ -11,7 +11,7 @@ const emailSchema = z
   .email({ message: "Enter a valid email address." })
 
 export const passphraseSchema = z.string().min(MIN_PASSPHRASE_LENGTH, {
-  message: `Passphrase must be at least ${MIN_PASSPHRASE_LENGTH} characters.`,
+  message: `Password must be at least ${MIN_PASSPHRASE_LENGTH} characters.`,
 })
 
 export const profileImageSchema = z
@@ -45,17 +45,15 @@ export type SignInPasswordValues = z.infer<typeof SignInPasswordSchema>
 
 export const SignUpSchema = z
   .object({
-    username: usernameDisplaySchema,
     email: emailSchema,
     password: passphraseSchema,
     passwordConfirmation: passphraseSchema,
-    image: profileImageSchema,
   })
   .superRefine((values, ctx) => {
     if (values.password !== values.passwordConfirmation) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
-        message: "Passphrases must match before continuing.",
+        message: "Passwords must match before continuing.",
         path: ["passwordConfirmation"],
       })
     }

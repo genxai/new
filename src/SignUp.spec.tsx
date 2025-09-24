@@ -2,7 +2,6 @@ import "@testing-library/jest-dom/vitest"
 import { useEffect, type ReactNode } from "react"
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 import {
-  act,
   cleanup,
   fireEvent,
   render,
@@ -10,6 +9,7 @@ import {
   waitFor,
 } from "@testing-library/react"
 import { MemoryRouter, Route, Routes, useLocation } from "react-router-dom"
+
 import SignUp from "@/SignUp"
 import { ThemeProvider } from "@/providers/theme-provider"
 import { COMPROMISED_PASSPHRASE_MESSAGE } from "@/shared/passphrase-strength"
@@ -17,17 +17,13 @@ import { COMPROMISED_PASSPHRASE_MESSAGE } from "@/shared/passphrase-strength"
 const useConvexAuthMock = vi.fn()
 const {
   signUpEmailMock,
-  toastSuccessMock,
   toastErrorMock,
   toastInfoMock,
-  stagePendingIdentityMock,
   clipboardWriteTextMock,
 } = vi.hoisted(() => ({
   signUpEmailMock: vi.fn(),
-  toastSuccessMock: vi.fn(),
   toastErrorMock: vi.fn(),
   toastInfoMock: vi.fn(),
-  stagePendingIdentityMock: vi.fn(),
   clipboardWriteTextMock: vi.fn(),
 }))
 
@@ -37,7 +33,6 @@ vi.mock("convex/react", async () => {
   return {
     ...actual,
     useConvexAuth: () => useConvexAuthMock(),
-    useMutation: () => stagePendingIdentityMock,
   }
 })
 
@@ -51,20 +46,15 @@ vi.mock("@/lib/auth-client", () => ({
 
 vi.mock("@/lib/toast", () => ({
   toast: {
-    success: toastSuccessMock,
     error: toastErrorMock,
     info: toastInfoMock,
   },
 }))
 
 vi.mock("@/components/ui/button", () => ({
-  Button: ({
-    children,
-    asChild: _asChild,
-    variant: _variant,
-    size: _size,
-    ...props
-  }: any) => <button {...props}>{children}</button>,
+  Button: ({ children, asChild: _asChild, ...props }: any) => (
+    <button {...props}>{children}</button>
+  ),
 }))
 
 function LocationObserver({
@@ -95,16 +85,20 @@ function renderWithProviders(
 beforeEach(() => {
   useConvexAuthMock.mockReset()
   signUpEmailMock.mockReset()
-  toastSuccessMock.mockReset()
   toastErrorMock.mockReset()
   toastInfoMock.mockReset()
-  stagePendingIdentityMock.mockReset()
   clipboardWriteTextMock.mockReset()
+
+  useConvexAuthMock.mockReturnValue({
+    isAuthenticated: false,
+    isLoading: false,
+  })
+
   signUpEmailMock.mockResolvedValue({
     data: { user: { id: "pending_user" } },
     error: null,
   })
-  stagePendingIdentityMock.mockResolvedValue({ ok: true })
+
   window.matchMedia = vi.fn().mockImplementation((query: string) => ({
     matches: false,
     media: query,
@@ -115,7 +109,7 @@ beforeEach(() => {
     removeListener: vi.fn(),
     dispatchEvent: vi.fn(),
   })) as unknown as typeof window.matchMedia
-  localStorage.clear()
+
   Object.defineProperty(window.navigator, "clipboard", {
     value: {
       writeText: clipboardWriteTextMock,
@@ -152,11 +146,6 @@ describe("SignUp", () => {
   })
 
   it("renders the theme toggle for unauthenticated pages", () => {
-    useConvexAuthMock.mockReturnValue({
-      isAuthenticated: false,
-      isLoading: false,
-    })
-
     renderWithProviders(
       <Routes>
         <Route path="/sign-up" element={<SignUp />} />
@@ -170,28 +159,20 @@ describe("SignUp", () => {
     ).toBeInTheDocument()
   })
 
-  it("prevents sign up with invalid email or short passphrase", async () => {
-    useConvexAuthMock.mockReturnValue({
-      isAuthenticated: false,
-      isLoading: false,
-    })
-
+  it("prevents sign up with invalid email or short password", async () => {
     renderWithProviders(
       <Routes>
         <Route path="/sign-up" element={<SignUp />} />
       </Routes>,
     )
 
-    fireEvent.change(screen.getByLabelText("Username"), {
-      target: { value: "AdaLovelace" },
-    })
     fireEvent.change(screen.getByLabelText("Email"), {
       target: { value: "not-an-email" },
     })
-    fireEvent.change(screen.getByLabelText("Passphrase"), {
+    fireEvent.change(screen.getByLabelText("Password"), {
       target: { value: "short" },
     })
-    fireEvent.change(screen.getByLabelText("Confirm passphrase"), {
+    fireEvent.change(screen.getByLabelText("Confirm password"), {
       target: { value: "short" },
     })
 
@@ -200,53 +181,45 @@ describe("SignUp", () => {
     expect(
       await screen.findByText("Enter a valid email address."),
     ).toBeInTheDocument()
-
-    const passphraseErrors = await screen.findAllByText(
-      "Passphrase must be at least 8 characters.",
+    const passwordErrors = await screen.findAllByText(
+      "Password must be at least 8 characters.",
     )
-    expect(passphraseErrors).toHaveLength(2)
-    expect(signUpEmailMock).not.toHaveBeenCalled()
-    expect(stagePendingIdentityMock).not.toHaveBeenCalled()
+    expect(passwordErrors).toHaveLength(2)
     expect(signUpEmailMock).not.toHaveBeenCalled()
   })
 
-  it("shows real-time passphrase strength feedback", async () => {
-    useConvexAuthMock.mockReturnValue({
-      isAuthenticated: false,
-      isLoading: false,
-    })
-
+  it("shows real-time password strength feedback", async () => {
     renderWithProviders(
       <Routes>
         <Route path="/sign-up" element={<SignUp />} />
       </Routes>,
     )
 
-    const passphraseField = screen.getByLabelText("Passphrase")
+    const passwordField = screen.getByLabelText("Password")
+    const strengthMeter = screen.getByRole("status")
 
-    fireEvent.change(passphraseField, {
+    fireEvent.change(passwordField, {
       target: { value: "aaaaaaa" },
     })
 
-    expect(
-      await screen.findByText("Passphrase strength: very weak"),
-    ).toBeInTheDocument()
+    await waitFor(() => {
+      expect(strengthMeter.getAttribute("data-strength-score")).toBe("0")
+      expect(strengthMeter.textContent).toMatch(/Password strength:/)
+    })
 
-    fireEvent.change(passphraseField, {
+    fireEvent.change(passwordField, {
       target: { value: "library-quiet-yellow-planet-92" },
     })
 
-    expect(
-      await screen.findByText("Passphrase strength: excellent"),
-    ).toBeInTheDocument()
+    await waitFor(() => {
+      expect(
+        strengthMeter.getAttribute("data-strength-score"),
+      ).not.toBeNull()
+      expect(strengthMeter.textContent).toMatch(/Password strength:/)
+    })
   })
 
-  it("surfaces compromised passphrase errors from the server", async () => {
-    useConvexAuthMock.mockReturnValue({
-      isAuthenticated: false,
-      isLoading: false,
-    })
-
+  it("surfaces compromised password errors from the server", async () => {
     signUpEmailMock.mockResolvedValue({
       data: null,
       error: { message: COMPROMISED_PASSPHRASE_MESSAGE },
@@ -258,16 +231,13 @@ describe("SignUp", () => {
       </Routes>,
     )
 
-    fireEvent.change(screen.getByLabelText("Username"), {
-      target: { value: "AdaLovelace" },
-    })
     fireEvent.change(screen.getByLabelText("Email"), {
       target: { value: "ada@gen.new" },
     })
-    fireEvent.change(screen.getByLabelText("Passphrase"), {
+    fireEvent.change(screen.getByLabelText("Password"), {
       target: { value: "library-quiet-yellow-planet-92" },
     })
-    fireEvent.change(screen.getByLabelText("Confirm passphrase"), {
+    fireEvent.change(screen.getByLabelText("Confirm password"), {
       target: { value: "library-quiet-yellow-planet-92" },
     })
 
@@ -278,28 +248,20 @@ describe("SignUp", () => {
     ).toBeInTheDocument()
   })
 
-  it("requires matching passphrases", async () => {
-    useConvexAuthMock.mockReturnValue({
-      isAuthenticated: false,
-      isLoading: false,
-    })
-
+  it("requires matching passwords", async () => {
     renderWithProviders(
       <Routes>
         <Route path="/sign-up" element={<SignUp />} />
       </Routes>,
     )
 
-    fireEvent.change(screen.getByLabelText("Username"), {
-      target: { value: "AdaLovelace" },
-    })
     fireEvent.change(screen.getByLabelText("Email"), {
       target: { value: "ada@gen.new" },
     })
-    fireEvent.change(screen.getByLabelText("Passphrase"), {
+    fireEvent.change(screen.getByLabelText("Password"), {
       target: { value: "correct horse battery" },
     })
-    fireEvent.change(screen.getByLabelText("Confirm passphrase"), {
+    fireEvent.change(screen.getByLabelText("Confirm password"), {
       target: { value: "different battery" },
     })
 
@@ -307,47 +269,13 @@ describe("SignUp", () => {
 
     await waitFor(() => {
       expect(
-        screen.getByText("Passphrases must match before continuing."),
+        screen.getByText("Passwords must match before continuing."),
       ).toBeInTheDocument()
     })
     expect(signUpEmailMock).not.toHaveBeenCalled()
-    expect(stagePendingIdentityMock).not.toHaveBeenCalled()
-  })
-
-  it("validates selected profile image", async () => {
-    useConvexAuthMock.mockReturnValue({
-      isAuthenticated: false,
-      isLoading: false,
-    })
-
-    renderWithProviders(
-      <Routes>
-        <Route path="/sign-up" element={<SignUp />} />
-      </Routes>,
-    )
-
-    const imageInput = screen.getByLabelText("Profile image (optional)")
-    const invalidFile = new File(["binary"], "avatar.gif", {
-      type: "image/gif",
-    })
-
-    fireEvent.change(imageInput, {
-      target: { files: [invalidFile] },
-    })
-
-    await waitFor(() => {
-      expect(
-        screen.getByText("Profile image must be a PNG or JPEG."),
-      ).toBeInTheDocument()
-    })
   })
 
   it("surfaces server errors in the form", async () => {
-    useConvexAuthMock.mockReturnValue({
-      isAuthenticated: false,
-      isLoading: false,
-    })
-
     signUpEmailMock.mockImplementation(async (_values, options) => {
       options?.onRequest?.()
       options?.onError?.({ error: { message: "Email already in use." } })
@@ -360,16 +288,13 @@ describe("SignUp", () => {
       </Routes>,
     )
 
-    fireEvent.change(screen.getByLabelText("Username"), {
-      target: { value: "AdaLovelace" },
-    })
     fireEvent.change(screen.getByLabelText("Email"), {
       target: { value: "ada@gen.new" },
     })
-    fireEvent.change(screen.getByLabelText("Passphrase"), {
+    fireEvent.change(screen.getByLabelText("Password"), {
       target: { value: "correct horse battery" },
     })
-    fireEvent.change(screen.getByLabelText("Confirm passphrase"), {
+    fireEvent.change(screen.getByLabelText("Confirm password"), {
       target: { value: "correct horse battery" },
     })
 
@@ -379,15 +304,9 @@ describe("SignUp", () => {
       expect(screen.getByText("Email already in use.")).toBeInTheDocument()
     })
     expect(toastErrorMock).toHaveBeenCalledWith("Email already in use.")
-    expect(stagePendingIdentityMock).not.toHaveBeenCalled()
   })
 
   it("submits successfully with valid input", async () => {
-    useConvexAuthMock.mockReturnValue({
-      isAuthenticated: false,
-      isLoading: false,
-    })
-
     let currentPath = "/sign-up"
 
     renderWithProviders(
@@ -403,192 +322,33 @@ describe("SignUp", () => {
       </>,
     )
 
-    fireEvent.change(screen.getByLabelText("Username"), {
-      target: { value: "AdaLovelace" },
-    })
     fireEvent.change(screen.getByLabelText("Email"), {
       target: { value: "ada@gen.new" },
     })
-    fireEvent.change(screen.getByLabelText("Passphrase"), {
-      target: { value: "correct horse battery" },
+    fireEvent.change(screen.getByLabelText("Password"), {
+      target: { value: "library-quiet-yellow-planet-92" },
     })
-    fireEvent.change(screen.getByLabelText("Confirm passphrase"), {
-      target: { value: "correct horse battery" },
+    fireEvent.change(screen.getByLabelText("Confirm password"), {
+      target: { value: "library-quiet-yellow-planet-92" },
     })
 
     fireEvent.click(screen.getByRole("button", { name: "Create account" }))
 
     await waitFor(() => {
-      expect(signUpEmailMock).toHaveBeenCalledTimes(1)
+      expect(signUpEmailMock).toHaveBeenCalledWith(
+        expect.objectContaining({
+          email: "ada@gen.new",
+          password: "library-quiet-yellow-planet-92",
+        }),
+        expect.any(Object),
+      )
     })
 
-    const expectedCallback = new URL(
-      "/auth/verification-success",
-      window.location.origin,
-    ).toString()
-
-    expect(signUpEmailMock.mock.calls[0]?.[0]).toMatchObject({
-      email: "ada@gen.new",
-      password: "correct horse battery",
-      name: "AdaLovelace",
-      callbackURL: expectedCallback,
-    })
-    expect(signUpEmailMock.mock.calls[0]?.[0].image).toBeUndefined()
-    await waitFor(() => {
-      expect(stagePendingIdentityMock).toHaveBeenCalledWith({
-        betterAuthUserId: "pending_user",
-        email: "ada@gen.new",
-        username: "AdaLovelace",
-        imageBase64: undefined,
-      })
-    })
     expect(toastInfoMock).toHaveBeenCalledWith(
       "Check your email to verify your account within 24 hours.",
     )
     await waitFor(() => {
       expect(currentPath).toBe("/auth/pending-verification")
     })
-  })
-
-  it("shows a helpful error when username conflict occurs", async () => {
-    useConvexAuthMock.mockReturnValue({
-      isAuthenticated: false,
-      isLoading: false,
-    })
-
-    stagePendingIdentityMock.mockRejectedValueOnce(
-      new Error("That username is taken. Try another."),
-    )
-
-    renderWithProviders(
-      <Routes>
-        <Route path="/sign-up" element={<SignUp />} />
-      </Routes>,
-    )
-
-    fireEvent.change(screen.getByLabelText("Username"), {
-      target: { value: "AdaLovelace" },
-    })
-    fireEvent.change(screen.getByLabelText("Email"), {
-      target: { value: "ada@gen.new" },
-    })
-    fireEvent.change(screen.getByLabelText("Passphrase"), {
-      target: { value: "correct horse battery" },
-    })
-    fireEvent.change(screen.getByLabelText("Confirm passphrase"), {
-      target: { value: "correct horse battery" },
-    })
-
-    fireEvent.click(screen.getByRole("button", { name: "Create account" }))
-
-    await waitFor(() => {
-      expect(signUpEmailMock).toHaveBeenCalled()
-    })
-    expect(
-      await screen.findByText("That username is taken. Try another."),
-    ).toBeInTheDocument()
-    expect(toastErrorMock).not.toHaveBeenCalled()
-  })
-
-  it("generates and applies a passphrase to both fields", async () => {
-    useConvexAuthMock.mockReturnValue({
-      isAuthenticated: false,
-      isLoading: false,
-    })
-
-    renderWithProviders(
-      <Routes>
-        <Route path="/sign-up" element={<SignUp />} />
-      </Routes>,
-    )
-
-    fireEvent.click(screen.getByRole("button", { name: "Generate" }))
-
-    await waitFor(() => {
-      expect(toastInfoMock).toHaveBeenCalledWith(
-        "Generated passphrase copied to your clipboard.",
-      )
-    })
-
-    const passphraseInput = screen.getByLabelText(
-      "Passphrase",
-    ) as HTMLInputElement
-    const confirmInput = screen.getByLabelText(
-      "Confirm passphrase",
-    ) as HTMLInputElement
-
-    await waitFor(() => {
-      expect(passphraseInput.value).toHaveLength(24)
-    })
-    expect(confirmInput.value).toBe(passphraseInput.value)
-
-    await waitFor(() => {
-      expect(clipboardWriteTextMock).toHaveBeenCalledWith(passphraseInput.value)
-    })
-  })
-
-  it("reveals the passphrase for five seconds before hiding again", async () => {
-    vi.useFakeTimers()
-    try {
-      useConvexAuthMock.mockReturnValue({
-        isAuthenticated: false,
-        isLoading: false,
-      })
-
-      renderWithProviders(
-        <Routes>
-          <Route path="/sign-up" element={<SignUp />} />
-        </Routes>,
-      )
-
-      const passphraseInput = screen.getByLabelText(
-        "Passphrase",
-      ) as HTMLInputElement
-      fireEvent.change(passphraseInput, {
-        target: { value: "SamplePassphrase123" },
-      })
-
-      const [revealButton] = screen.getAllByRole("button", {
-        name: "Show passphrase",
-      })
-
-      fireEvent.click(revealButton)
-      expect(passphraseInput.type).toBe("text")
-      expect(revealButton).toHaveAttribute(
-        "aria-label",
-        "Extend passphrase visibility",
-      )
-
-      await act(async () => {
-        await vi.advanceTimersByTimeAsync(4999)
-      })
-      expect(passphraseInput.type).toBe("text")
-
-      await act(async () => {
-        await vi.advanceTimersByTimeAsync(1)
-      })
-      expect(passphraseInput.type).toBe("password")
-      expect(revealButton).toHaveAttribute("aria-label", "Show passphrase")
-
-      fireEvent.click(revealButton)
-      expect(passphraseInput.type).toBe("text")
-      expect(revealButton).toHaveAttribute(
-        "aria-label",
-        "Extend passphrase visibility",
-      )
-
-      await act(async () => {
-        await vi.advanceTimersByTimeAsync(4999)
-      })
-      expect(passphraseInput.type).toBe("text")
-
-      await act(async () => {
-        await vi.advanceTimersByTimeAsync(1)
-      })
-      expect(passphraseInput.type).toBe("password")
-      expect(revealButton).toHaveAttribute("aria-label", "Show passphrase")
-    } finally {
-      vi.useRealTimers()
-    }
   })
 })

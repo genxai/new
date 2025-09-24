@@ -46,7 +46,7 @@ export const PassphraseInput = forwardRef<
         size="icon"
         onClick={reveal}
         aria-label={
-          visible ? "Extend passphrase visibility" : "Show passphrase"
+          visible ? "Extend password visibility" : "Show password"
         }
         className="absolute right-1 top-1/2 h-8 w-8 -translate-y-1/2 text-muted-foreground hover:text-foreground"
       >

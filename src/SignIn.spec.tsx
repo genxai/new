@@ -55,7 +55,7 @@ vi.mock("@/lib/toast", () => ({
 }))
 
 vi.mock("@/components/ui/button", () => ({
-  Button: ({ children, ...props }: any) => (
+  Button: ({ children, asChild: _asChild, ...props }: any) => (
     <button {...props}>{children}</button>
   ),
 }))

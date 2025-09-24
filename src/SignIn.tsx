@@ -435,20 +435,36 @@ export default function SignIn() {
                       />
                     </div>
 
-                    <Button
-                      type="submit"
-                      className="w-full"
-                      disabled={
-                        passwordLoading ||
-                        !passwordEmailValue.trim() ||
-                        !passwordValue.trim()
-                      }
-                    >
-                      {passwordLoading ? (
-                        <Loader2 className="mr-2 size-4 animate-spin" aria-hidden />
-                      ) : null}
-                      Sign in
-                    </Button>
+                    <div className="space-y-3">
+                      <Button
+                        type="submit"
+                        className="w-full"
+                        disabled={
+                          passwordLoading ||
+                          !passwordEmailValue.trim() ||
+                          !passwordValue.trim()
+                        }
+                      >
+                        {passwordLoading ? (
+                          <Loader2
+                            className="mr-2 size-4 animate-spin"
+                            aria-hidden
+                          />
+                        ) : null}
+                        Sign in
+                      </Button>
+                      <p className="text-center text-sm text-muted-foreground">
+                        Need an account? {""}
+                        <Button
+                          type="button"
+                          variant="link"
+                          className="px-1"
+                          asChild
+                        >
+                          <Link to="/sign-up">Create one</Link>
+                        </Button>
+                      </p>
+                    </div>
                   </form>
                 </Form>
               </TabsContent>

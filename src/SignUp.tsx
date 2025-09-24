@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react"
-import { Loader2, X } from "lucide-react"
+import { Loader2 } from "lucide-react"
 import { Link, useNavigate } from "react-router-dom"
-import { useConvexAuth, useMutation } from "convex/react"
+import { useConvexAuth } from "convex/react"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { Button } from "@/components/ui/button"
@@ -14,7 +14,6 @@ import {
   CardTitle,
 } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import {
   Form,
   FormControl,
@@ -22,22 +21,15 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-  FormDescription,
 } from "@/components/form"
 import { authClient } from "@/lib/auth-client"
 import { toast } from "@/lib/toast"
 import { SessionFallback } from "@/routes/guards"
 import { SignUpSchema, type SignUpValues } from "../shared/auth-schemas"
 import { pickIdentityPreviewSample } from "../shared/identity"
-import {
-  PREFERRED_USERNAME_STORAGE_KEY,
-  USERNAME_TAKEN_ERROR,
-} from "@/features/identity"
-import { api } from "../convex/_generated/api"
 import { PublicPageShell } from "@/components/PublicPageShell"
 import { PassphraseInput } from "@/components/PassphraseInput"
 import { copyPassphraseToClipboard, generatePassphrase } from "@/lib/passphrase"
-import { convertImageToBase64 } from "@/lib/image"
 import { resolveVerificationSuccessUrl } from "@/lib/verification"
 import {
   assertAcceptablePassphrase,
@@ -50,47 +42,41 @@ import { cn } from "@/lib/utils"
 
 export default function SignUp() {
   const { isAuthenticated, isLoading } = useConvexAuth()
-  const stagePendingIdentity = useMutation(api.identity.stagePendingIdentity)
   const [identitySample] = useState(() => pickIdentityPreviewSample())
   const form = useForm<SignUpValues>({
     resolver: zodResolver(SignUpSchema),
     defaultValues: {
-      username: "",
       email: "",
       password: "",
       passwordConfirmation: "",
-      image: null,
     },
     mode: "onSubmit",
     reValidateMode: "onSubmit",
   })
-  const [imagePreview, setImagePreview] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
   const navigate = useNavigate()
 
-  const usernameValue = form.watch("username")
   const emailValue = form.watch("email")
-  const passphraseValue = form.watch("password")
-  const profileInitials = usernameValue.trim().slice(0, 2).toUpperCase() || "PR"
+  const passwordValue = form.watch("password")
 
-  const passphraseEvaluation = evaluatePassphraseStrength({
-    passphrase: passphraseValue,
-    metadata: [emailValue, usernameValue],
+  const passwordEvaluation = evaluatePassphraseStrength({
+    passphrase: passwordValue,
+    metadata: [emailValue],
   })
-  const passphraseStrengthLabel = getPassphraseStrengthLabel(
-    passphraseEvaluation.score,
+  const passwordStrengthLabel = getPassphraseStrengthLabel(
+    passwordEvaluation.score,
   )
   const strengthBarClass = cn(
     "h-1 rounded-full transition-all",
-    passphraseEvaluation.score >= 4
+    passwordEvaluation.score >= 4
       ? "bg-emerald-500"
-      : passphraseEvaluation.score >= 2
+      : passwordEvaluation.score >= 2
         ? "bg-amber-500"
         : "bg-destructive",
   )
   const strengthPercentage = Math.max(
     0,
-    Math.min(100, (passphraseEvaluation.score / 4) * 100),
+    Math.min(100, (passwordEvaluation.score / 4) * 100),
   )
 
   useEffect(() => {
@@ -108,7 +94,7 @@ export default function SignUp() {
     try {
       assertAcceptablePassphrase({
         passphrase: values.password,
-        metadata: [values.email, values.username],
+        metadata: [values.email],
       })
     } catch (error) {
       if (error instanceof PassphraseValidationError) {
@@ -122,18 +108,11 @@ export default function SignUp() {
       throw error
     }
 
-    const imageBase64 = values.image
-      ? await convertImageToBase64(values.image)
-      : undefined
-
     const verificationSuccessUrl = resolveVerificationSuccessUrl()
-
     const { data, error } = await authClient.signUp.email(
       {
         email: values.email,
         password: values.password,
-        name: values.username,
-        image: imageBase64,
         callbackURL: verificationSuccessUrl,
       },
       {
@@ -172,52 +151,14 @@ export default function SignUp() {
       return
     }
 
-    try {
-      if (typeof window !== "undefined") {
-        window.localStorage.setItem(
-          PREFERRED_USERNAME_STORAGE_KEY,
-          values.username,
-        )
-      }
-    } catch {
-      // Ignore storage failures (private mode, etc.).
-    }
-
     if (!data?.user?.id) {
       toast.error("We couldn't finish creating your profile. Try again.")
       setLoading(false)
       return
     }
 
-    setLoading(true)
-    try {
-      await stagePendingIdentity({
-        betterAuthUserId: data.user.id,
-        email: values.email,
-        username: values.username,
-        imageBase64,
-      })
-      toast.info("Check your email to verify your account within 24 hours.")
-      navigate("/auth/pending-verification", { replace: true })
-    } catch (stageError) {
-      const message =
-        stageError instanceof Error ? stageError.message : undefined
-      if (message === USERNAME_TAKEN_ERROR) {
-        form.setError("username", {
-          type: "server",
-          message,
-        })
-      } else {
-        const fallback = "Could not save username. Try again."
-        toast.error(message ?? fallback)
-        form.setError("username", {
-          type: "server",
-          message: fallback,
-        })
-      }
-    } finally {
-      setLoading(false)
-    }
+    toast.info("Check your email to verify your account within 24 hours.")
+    navigate("/auth/pending-verification", { replace: true })
   })
 
   if (isLoading) {
@@ -226,79 +167,44 @@ export default function SignUp() {
 
   return (
     <PublicPageShell contentClassName="py-6 sm:py-10">
-      <div className="mx-auto flex h-full w-full max-w-2xl items-center justify-center">
+      <div className="mx-auto flex h-full w-full max-w-xl items-center justify-center">
         <Card className="w-full border shadow-sm">
           <CardHeader className="space-y-4">
             <CardTitle className="text-3xl font-semibold tracking-tight">
               Create your account
             </CardTitle>
             <CardDescription className="text-lg text-muted-foreground">
-              We&apos;ll keep your profile in sync with Better Auth. Uploading a
-              profile image is optional.
+              Use your email and a secure password. We&apos;ll send a
+              verification link to finish setting things up.
             </CardDescription>
           </CardHeader>
 
           <CardContent>
             <Form {...form}>
-              <form className="grid gap-6" noValidate onSubmit={submitSignUp}>
-                {/* Username + Email in one aligned row; username helper on its own line below */}
-                <div className="grid gap-4 sm:grid-cols-2 items-start">
-                  <FormField
-                    control={form.control}
-                    name="username"
-                    render={({ field, fieldState }) => (
-                      <FormItem className="space-y-2">
-                        <FormLabel htmlFor="username">Username</FormLabel>
-                        <FormControl>
-                          <Input
-                            {...field}
-                            id="username"
-                            placeholder={`e.g. ${identitySample.username}`}
-                            autoComplete="off"
-                            autoCapitalize="none"
-                            aria-describedby="username-help"
-                            aria-invalid={
-                              fieldState.invalid ? "true" : undefined
-                            }
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={form.control}
-                    name="email"
-                    render={({ field, fieldState }) => (
-                      <FormItem className="space-y-2">
-                        <FormLabel htmlFor="email">Email</FormLabel>
-                        <FormControl>
-                          <Input
-                            {...field}
-                            id="email"
-                            type="email"
-                            placeholder={`e.g. ${identitySample.email}`}
-                            required
-                            autoComplete="email"
-                            aria-invalid={
-                              fieldState.invalid ? "true" : undefined
-                            }
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  {/* Username helper line lives below username input without affecting email column */}
-                  <div className="sm:col-span-1">
-                    <p
-                      id="username-help"
-                      className="text-xs text-muted-foreground"
-                    >
-                      Letters and digits only, 3–32 characters.
-                    </p>
-                  </div>
-                </div>
+              <form className="space-y-6" noValidate onSubmit={submitSignUp}>
+                <FormField
+                  control={form.control}
+                  name="email"
+                  render={({ field, fieldState }) => (
+                    <FormItem className="space-y-2">
+                      <FormLabel htmlFor="email">Email</FormLabel>
+                      <FormControl>
+                        <Input
+                          {...field}
+                          id="email"
+                          type="email"
+                          placeholder={`e.g. ${identitySample.email}`}
+                          required
+                          autoComplete="email"
+                          aria-invalid={
+                            fieldState.invalid ? "true" : undefined
+                          }
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
 
                 <div className="grid gap-4 sm:grid-cols-2">
                   <FormField
@@ -307,7 +213,7 @@ export default function SignUp() {
                     render={({ field, fieldState }) => (
                       <FormItem className="space-y-2">
                         <div className="flex items-center justify-between">
-                          <FormLabel htmlFor="password">Passphrase</FormLabel>
+                          <FormLabel htmlFor="password">Password</FormLabel>
                           <Button
                             type="button"
                             variant="link"
@@ -319,17 +225,13 @@ export default function SignUp() {
                                   shouldDirty: true,
                                   shouldValidate: true,
                                 })
-                                form.setValue(
-                                  "passwordConfirmation",
-                                  generated,
-                                  {
-                                    shouldDirty: true,
-                                    shouldValidate: true,
-                                  },
-                                )
+                                form.setValue("passwordConfirmation", generated, {
+                                  shouldDirty: true,
+                                  shouldValidate: true,
+                                })
                                 await copyPassphraseToClipboard(generated)
                                 toast.info(
-                                  "Generated passphrase copied to your clipboard.",
+                                  "Generated password copied to your clipboard.",
                                 )
                               } catch {
                                 // Silent failure per requirements.
@@ -343,7 +245,7 @@ export default function SignUp() {
                           <PassphraseInput
                             {...field}
                             id="password"
-                            placeholder="Passphrase"
+                            placeholder="Password"
                             autoComplete="new-password"
                             required
                             aria-invalid={
@@ -355,19 +257,20 @@ export default function SignUp() {
                       </FormItem>
                     )}
                   />
+
                   <FormField
                     control={form.control}
                     name="passwordConfirmation"
                     render={({ field, fieldState }) => (
                       <FormItem className="space-y-2">
                         <FormLabel htmlFor="password-confirmation">
-                          Confirm passphrase
+                          Confirm password
                         </FormLabel>
                         <FormControl>
                           <PassphraseInput
                             {...field}
                             id="password-confirmation"
-                            placeholder="Confirm passphrase"
+                            placeholder="Confirm password"
                             autoComplete="new-password"
                             required
                             aria-invalid={
@@ -382,14 +285,13 @@ export default function SignUp() {
 
                   <div className="sm:col-span-2 space-y-2">
                     <div className="text-xs text-muted-foreground">
-                      At least 8 characters; we block weak or breached
-                      passphrases automatically.
+                      At least 8 characters; we block weak or breached passwords automatically.
                     </div>
                     <div
                       role="status"
                       aria-live="polite"
                       className="-mx-6 px-6"
-                      data-strength-score={passphraseEvaluation.score}
+                      data-strength-score={passwordEvaluation.score}
                     >
                       <div className="h-1 w-full rounded-full bg-muted">
                         <div
@@ -399,94 +301,11 @@ export default function SignUp() {
                         />
                       </div>
                       <span className="sr-only">
-                        Passphrase strength: {passphraseStrengthLabel}
+                        Password strength: {passwordStrengthLabel}
                       </span>
                     </div>
                   </div>
                 </div>
-
-                <FormField
-                  control={form.control}
-                  name="image"
-                  render={({ field, fieldState }) => (
-                    <FormItem className="space-y-3">
-                      <FormLabel htmlFor="image">
-                        Profile image (optional)
-                      </FormLabel>
-                      <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
-                        <Avatar className="size-20 border">
-                          {imagePreview ? (
-                            <AvatarImage
-                              src={imagePreview}
-                              alt="Profile preview"
-                            />
-                          ) : (
-                            <AvatarFallback className="bg-muted text-xs text-muted-foreground">
-                              {profileInitials}
-                            </AvatarFallback>
-                          )}
-                        </Avatar>
-                        <div className="flex flex-col gap-3 sm:flex-1">
-                          <FormControl>
-                            <Input
-                              id="image"
-                              type="file"
-                              accept="image/*"
-                              aria-describedby="image-helper"
-                              onBlur={field.onBlur}
-                              ref={field.ref}
-                              aria-invalid={
-                                fieldState.invalid ? "true" : undefined
-                              }
-                              onChange={(event) => {
-                                const file = event.target.files?.[0] ?? null
-                                field.onChange(file)
-                                if (
-                                  file &&
-                                  ["image/png", "image/jpeg"].includes(
-                                    file.type,
-                                  )
-                                ) {
-                                  const reader = new FileReader()
-                                  reader.onloadend = () => {
-                                    setImagePreview(reader.result as string)
-                                  }
-                                  reader.readAsDataURL(file)
-                                } else {
-                                  setImagePreview(null)
-                                }
-                                event.target.value = ""
-                                void form.trigger("image")
-                              }}
-                            />
-                          </FormControl>
-                          <FormDescription
-                            id="image-helper"
-                            className="text-xs text-muted-foreground"
-                          >
-                            PNG or JPEG up to 5 MB.
-                          </FormDescription>
-                        </div>
-                        {imagePreview ? (
-                          <Button
-                            type="button"
-                            variant="ghost"
-                            size="icon"
-                            aria-label="Remove selected profile image"
-                            onClick={() => {
-                              field.onChange(null)
-                              setImagePreview(null)
-                              void form.trigger("image")
-                            }}
-                          >
-                            <X className="size-4" aria-hidden />
-                          </Button>
-                        ) : null}
-                      </div>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
 
                 <Button type="submit" className="w-full" disabled={loading}>
                   {loading ? (
