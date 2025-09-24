@@ -268,7 +268,9 @@ export default function SignIn() {
                   <Button
                     type="button"
                     className="w-full"
-                    disabled={sendingCode || cooldownRemaining > 0 || !emailValue}
+                    disabled={
+                      sendingCode || cooldownRemaining > 0 || !emailValue
+                    }
                     onClick={() => {
                       void sendVerificationCode()
                     }}

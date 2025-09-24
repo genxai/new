@@ -9,11 +9,13 @@ Your email system isn't sending emails in production. Here's how to debug:
 In production, ensure these environment variables are set correctly:
 
 ### Required Variables
+
 - `MAIL_CONSOLE_PREVIEW=false` - Set to false to send real emails
-- `RESEND_API_KEY=re_...` - Your Resend API key (starts with "re_")
+- `RESEND_API_KEY=re_...` - Your Resend API key (starts with "re\_")
 - `MAIL_FROM=Your Name <your-email@yourdomain.com>` - Valid from address
 
 ### Optional Variables
+
 - `BRAND_NAME` - Your app name for emails
 - `BRAND_LOGO_URL` - Logo URL (must be https://)
 - `BRAND_TAGLINE` - Tagline for emails
@@ -23,24 +25,29 @@ In production, ensure these environment variables are set correctly:
 The system now logs comprehensive debug information. Check these locations:
 
 ### Convex Logs
+
 - In your Convex dashboard, check function logs
 - Look for `[EMAIL DEBUG]` prefixed messages
 
-### Vercel Logs  
+### Vercel Logs
+
 - Check your Vercel function logs
 - Look for `[client-log]` messages sent via `/api/log`
 
 ## Step 3: Common Error Messages
 
 ### "RESEND_API_KEY is required"
+
 - Check `RESEND_API_KEY` is set in production environment
-- Verify it starts with "re_" and is at least 20 characters
+- Verify it starts with "re\_" and is at least 20 characters
 
 ### "Mail configuration invalid"
+
 - Check `MAIL_FROM` format: `Name <email@domain.com>`
 - Verify all required env vars are present
 
 ### "MAIL_CONSOLE_PREVIEW=true"
+
 - Change to `MAIL_CONSOLE_PREVIEW=false` in production
 - This setting logs emails instead of sending them
 
@@ -62,6 +69,7 @@ Look for these log patterns:
 ## Step 5: Verify Resend Domain
 
 Ensure your sending domain is verified in Resend:
+
 1. Go to your Resend dashboard
 2. Check "Domains" section
 3. Verify the domain used in `MAIL_FROM` is verified
@@ -83,7 +91,7 @@ BRAND_TAGLINE=Welcome to MyApp
 ## Quick Fix Checklist
 
 1. ✅ `MAIL_CONSOLE_PREVIEW=false`
-2. ✅ `RESEND_API_KEY` is set and valid 
+2. ✅ `RESEND_API_KEY` is set and valid
 3. ✅ `MAIL_FROM` uses verified domain
 4. ✅ Check Convex/Vercel logs for errors
 5. ✅ Verify Resend domain is active

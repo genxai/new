@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react"
 import { useNavigate, Link } from "react-router-dom"
 import { useAction, useConvexAuth, useQuery } from "convex/react"
-import { Github, Sparkles, UserRound } from "lucide-react"
+import { Github, Image as ImageIcon, Sparkles, UserRound } from "lucide-react"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { toast } from "@/lib/toast"
@@ -11,6 +11,34 @@ import { useClientId } from "@/hooks/useClientId"
 const GUEST_GENERATION_STORAGE_KEY = "gen.new.guest-generations"
 const FREE_GUEST_GENERATIONS = 1
 const FREE_AUTH_GENERATIONS = 3
+
+type ChatMessage =
+  | {
+      id: string
+      role: "user"
+      type: "text" | "image"
+      content: string
+      createdAt: number
+    }
+  | {
+      id: string
+      role: "assistant"
+      type: "text"
+      content: string
+      createdAt: number
+      status: "pending" | "completed" | "failed"
+      error?: string
+    }
+  | {
+      id: string
+      role: "assistant"
+      type: "image"
+      imageUrls: string[]
+      description?: string
+      createdAt: number
+      status: "pending" | "completed" | "failed"
+      error?: string
+    }
 
 type AuthActionProps = {
   isAuthenticated: boolean
@@ -54,32 +82,31 @@ export default function LandingPage() {
   const [prompt, setPrompt] = useState("")
   const [isGenerating, setIsGenerating] = useState(false)
   const [guestGenerationCount, setGuestGenerationCount] = useState(0)
+  const [mode, setMode] = useState<"text" | "image">("text")
+  const [messages, setMessages] = useState<ChatMessage[]>([])
   const navigate = useNavigate()
   const { isAuthenticated, isLoading } = useConvexAuth()
   const generateImage = useAction(api.images.generateImage)
+  const generateTextResponse = useAction(api.images.generateTextResponse)
   const clientId = useClientId()
-  const generationsArgs = useMemo(
+  const usageArgs = useMemo(
     () => ({ clientId: clientId ?? undefined }),
     [clientId],
   )
-  const generationResult = useQuery(api.images.getUserGenerations, generationsArgs)
-  const generations = generationResult ?? []
+  const usageResult = useQuery(api.images.getGenerationUsage, usageArgs)
+  const usage = usageResult ?? { total: 0, completed: 0 }
 
   useEffect(() => {
     if (typeof window === "undefined") {
       return
     }
 
-    const stored = window.localStorage.getItem(
-      GUEST_GENERATION_STORAGE_KEY,
-    )
-    if (!stored) {
-      return
-    }
-
-    const parsed = Number.parseInt(stored, 10)
-    if (!Number.isNaN(parsed)) {
-      setGuestGenerationCount(parsed)
+    const stored = window.localStorage.getItem(GUEST_GENERATION_STORAGE_KEY)
+    if (stored) {
+      const parsed = Number.parseInt(stored, 10)
+      if (!Number.isNaN(parsed)) {
+        setGuestGenerationCount(parsed)
+      }
     }
   }, [])
 
@@ -95,61 +122,151 @@ export default function LandingPage() {
       return
     }
 
-    if (!isAuthenticated) {
-      if (!clientId) {
-        toast.info("Setting up your session, please try again.")
-        return
-      }
+    if (mode === "image") {
+      if (!isAuthenticated) {
+        if (!clientId) {
+          toast.info("Setting up your session, please try again.")
+          return
+        }
 
-      if (guestGenerationCount >= FREE_GUEST_GENERATIONS) {
+        if (guestGenerationCount >= FREE_GUEST_GENERATIONS) {
+          toast.info({
+            title: "Create an account",
+            description: "Sign in to keep generating new images.",
+          })
+          navigate("/auth")
+          return
+        }
+      } else if (usage.total >= FREE_AUTH_GENERATIONS) {
         toast.info({
-          title: "Create an account",
-          description: "Sign in to keep generating new images.",
+          title: "Free limit reached",
+          description: "You've used all free images. Check back later!",
         })
-        navigate("/auth")
         return
       }
-    } else if (generations.length >= FREE_AUTH_GENERATIONS) {
-      toast.info({
-        title: "Free limit reached",
-        description: "You've used all free images. Check back later!",
-      })
-      return
     }
 
     try {
       setIsGenerating(true)
-      const result = await generateImage({
-        prompt: trimmedPrompt,
-        clientId: clientId ?? undefined,
-      })
-      console.log("Image generation result:", result)
+      const now = Date.now()
+      const userMessage: ChatMessage = {
+        id: `user-${now}`,
+        role: "user",
+        type: mode,
+        content: trimmedPrompt,
+        createdAt: now,
+      }
+      if (mode === "text") {
+        const assistantId = `assistant-${now}`
+        const pendingAssistant: ChatMessage = {
+          id: assistantId,
+          role: "assistant",
+          type: "text",
+          content: "",
+          createdAt: now + 1,
+          status: "pending",
+        }
+        setMessages((prev) => [...prev, userMessage, pendingAssistant])
 
-      if (!isAuthenticated) {
-        const nextCount = guestGenerationCount + 1
-        setGuestGenerationCount(nextCount)
-        if (typeof window !== "undefined") {
-          window.localStorage.setItem(
-            GUEST_GENERATION_STORAGE_KEY,
-            String(nextCount),
-          )
+        const result = await generateTextResponse({
+          prompt: trimmedPrompt,
+          clientId: clientId ?? undefined,
+        })
+
+        setMessages((prev) =>
+          prev.map((message) =>
+            message.id === assistantId
+              ? {
+                  ...message,
+                  content: result.text,
+                  status: "completed",
+                }
+              : message,
+          ),
+        )
+      } else {
+        if (!clientId) {
+          toast.info("Setting up your session, please try again.")
+          setIsGenerating(false)
+          return
+        }
+
+        const assistantId = `assistant-image-${now}`
+        const pendingAssistant: ChatMessage = {
+          id: assistantId,
+          role: "assistant",
+          type: "image",
+          imageUrls: [],
+          description: undefined,
+          createdAt: now + 1,
+          status: "pending",
+        }
+
+        setMessages((prev) => [...prev, userMessage, pendingAssistant])
+
+        const result = await generateImage({
+          prompt: trimmedPrompt,
+          clientId: clientId ?? undefined,
+        })
+
+        setMessages((prev) =>
+          prev.map((message) =>
+            message.id === assistantId && message.role === "assistant"
+              ? {
+                  ...message,
+                  imageUrls: result.imageUrls,
+                  description: result.description ?? message.description,
+                  status: "completed",
+                }
+              : message,
+          ),
+        )
+
+        if (!isAuthenticated) {
+          const nextCount = guestGenerationCount + 1
+          setGuestGenerationCount(nextCount)
+          if (typeof window !== "undefined") {
+            window.localStorage.setItem(
+              GUEST_GENERATION_STORAGE_KEY,
+              String(nextCount),
+            )
+          }
         }
       }
     } catch (error) {
-      const message =
-        error instanceof Error ? error.message : "Unable to generate image"
-      toast.error(message)
+      const errorMessage =
+        error instanceof Error ? error.message : "Unable to generate response"
+      toast.error(errorMessage)
+
+      if (mode === "image") {
+        setMessages((prev) =>
+          prev.map((entry) =>
+            entry.role === "assistant" && entry.status === "pending"
+              ? { ...entry, status: "failed", error: errorMessage }
+              : entry,
+          ),
+        )
+
+        if (
+          !isAuthenticated &&
+          errorMessage.includes("Free generation limit")
+        ) {
+          navigate("/auth")
+        }
+      } else {
+        setMessages((prev) =>
+          prev.map((entry) =>
+            entry.role === "assistant" && entry.status === "pending"
+              ? { ...entry, status: "failed", error: errorMessage }
+              : entry,
+          ),
+        )
+      }
     } finally {
       setIsGenerating(false)
     }
 
-    // For now, just navigate to sign-in with the prompt
-    // Later you can modify this to handle the generation
-    // navigate("/auth", { state: { prompt: trimmedPrompt } })
-    // toast.info({
-    //   title: "Sign in required",
-    //   description: "Sign in to start generating your free images.",
-    // })
+    setPrompt("")
   }
 
   return (
@@ -185,37 +302,88 @@ export default function LandingPage() {
           </div>
         </div>
       </header>
-      <main className="flex-1 flex items-center justify-center px-4">
-        <div className="w-full max-w-md space-y-6">
+      <main className="flex-1 flex flex-col px-4 py-10">
+        <div className="w-full max-w-3xl mx-auto flex-1 flex flex-col gap-6">
           <div className="text-center space-y-2">
-            <h1 className="text-3xl font-bold">Generate any image</h1>
+            <h1 className="text-3xl font-bold">Generate anything</h1>
             <p className="text-muted-foreground">
-              Using{" "}
-              <a
-                href="https://banananano.ai"
-                target="_blank"
-                rel="noopener noreferrer"
-              >
-                {" "}
-                Nano Banana model by Google
-              </a>
+              Ask a question or switch to the image mode to create visuals.
             </p>
           </div>
 
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <Input
-              type="text"
-              placeholder="Generate an image"
-              value={prompt}
-              onChange={(e) => setPrompt(e.target.value)}
-              className="w-full"
-            />
+          <div className="flex-1 overflow-y-auto rounded-xl border border-border/50 bg-muted/10 p-4 space-y-4">
+            {messages.length === 0 ? (
+              <div className="flex h-full w-full flex-col items-center justify-center text-center gap-3 text-muted-foreground">
+                <span className="flex h-12 w-12 items-center justify-center rounded-full bg-primary/10 text-primary">
+                  <Sparkles className="h-6 w-6" aria-hidden />
+                </span>
+                <div>
+                  <p className="font-medium text-foreground">
+                    Start the conversation
+                  </p>
+                  <p className="text-sm">
+                    Type a question or toggle the image icon to describe what
+                    you want to see.
+                  </p>
+                </div>
+              </div>
+            ) : (
+              messages.map((message) => (
+                <ChatBubble key={message.id} message={message} />
+              ))
+            )}
+          </div>
+
+          <form onSubmit={handleSubmit} className="space-y-3">
+            <div className="flex items-center gap-2">
+              <Input
+                type="text"
+                placeholder={
+                  mode === "text" ? "Ask anything" : "Generate image"
+                }
+                value={prompt}
+                onChange={(e) => setPrompt(e.target.value)}
+                className="flex-1"
+                disabled={isGenerating && mode === "image"}
+              />
+              <Button
+                type="button"
+                variant={mode === "image" ? "default" : "outline"}
+                size="icon"
+                onClick={() =>
+                  setMode((prev) => (prev === "text" ? "image" : "text"))
+                }
+                aria-pressed={mode === "image"}
+                aria-label={
+                  mode === "image"
+                    ? "Switch to text mode"
+                    : "Switch to image mode"
+                }
+              >
+                <ImageIcon
+                  className={mode === "image" ? "text-primary-foreground" : ""}
+                  aria-hidden
+                />
+                <span className="sr-only">
+                  {mode === "image" ? "Image mode active" : "Text mode active"}
+                </span>
+              </Button>
+            </div>
             <Button
               type="submit"
               className="w-full"
-              disabled={isGenerating || (!isAuthenticated && !clientId)}
+              disabled={
+                isGenerating ||
+                (!isAuthenticated && !clientId && mode === "image")
+              }
             >
-              {isGenerating ? "Generating…" : "Generate"}
+              {isGenerating
+                ? mode === "image"
+                  ? "Generating…"
+                  : "Thinking…"
+                : mode === "image"
+                  ? "Generate"
+                  : "Send"}
             </Button>
           </form>
 
@@ -228,139 +396,79 @@ export default function LandingPage() {
                 >
                   Sign in
                 </Link>{" "}
-                to start generating your free images.
+                to unlock extra image generations.
               </p>
             </div>
           ) : null}
         </div>
       </main>
-
-      <GenerationsGrid generations={generations} />
     </div>
   )
 }
 
-type GenerationRecord = {
-  _id: string
-  prompt: string
-  status: "pending" | "completed" | "failed"
-  description?: string
-  error?: string
-  imageUrls: string[]
-  _creationTime: number
-}
+function ChatBubble({ message }: { message: ChatMessage }) {
+  const isUser = message.role === "user"
 
-function GenerationsGrid({
-  generations,
-}: {
-  generations: GenerationRecord[]
-}) {
-  if (!generations.length) {
+  if (message.role === "assistant" && message.status === "failed") {
     return (
-      <div className="max-w-4xl mx-auto px-4 pb-16">
-        <div className="relative overflow-hidden rounded-3xl border border-border/50 bg-muted/30 px-8 py-14 text-center shadow-lg transition-colors dark:border-border/60 dark:bg-gradient-to-br dark:from-slate-950 dark:via-slate-900 dark:to-slate-950">
-          <div
-            className="pointer-events-none absolute inset-0 opacity-60 dark:opacity-100"
-            aria-hidden
-          >
-            <div className="absolute -top-24 left-1/2 h-64 w-64 -translate-x-1/2 rounded-full bg-primary/20 blur-3xl" />
-            <div className="absolute -bottom-24 right-12 h-56 w-56 rounded-full bg-emerald-400/20 blur-3xl" />
-          </div>
+      <div className={`flex ${isUser ? "justify-end" : "justify-start"}`}>
+        <div className="max-w-[80%] rounded-2xl border border-destructive/40 bg-destructive/10 px-4 py-3 text-sm text-destructive">
+          {message.error ?? "Unable to generate a response."}
+        </div>
+      </div>
+    )
+  }
 
-          <div className="relative z-10 flex flex-col items-center gap-5">
-            <span className="flex h-14 w-14 items-center justify-center rounded-full bg-primary/15 text-primary backdrop-blur">
-              <Sparkles className="h-6 w-6" aria-hidden />
-            </span>
-            <div className="space-y-2">
-              <h2 className="text-2xl font-semibold tracking-tight text-foreground">
-                No images yet
-              </h2>
-              <p className="text-sm text-muted-foreground">
-                Start with a prompt above and we'll keep your fresh generations right here.
-              </p>
-            </div>
+  if (message.role === "assistant" && message.type === "image") {
+    return (
+      <div className="flex justify-start">
+        <div className="max-w-[80%] space-y-3">
+          <div className="rounded-2xl bg-muted px-4 py-3 text-sm text-muted-foreground">
+            {message.status === "pending"
+              ? "Creating your image…"
+              : message.description || "Here's what I came up with."}
           </div>
+          {message.status === "pending" ? (
+            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+              <div className="h-4 w-4 animate-spin rounded-full border-2 border-muted-foreground/40 border-t-transparent" />
+              Generating image…
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+              {message.imageUrls.map((url, index) => (
+                <img
+                  key={`${message.id}-${index}`}
+                  src={url}
+                  alt="Generated image"
+                  className="rounded-xl border border-border/40 object-cover"
+                  loading="lazy"
+                />
+              ))}
+            </div>
+          )}
         </div>
       </div>
     )
   }
 
   return (
-    <div className="max-w-5xl mx-auto px-4 pb-8">
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {generations.map((g) => (
-          <div
-            key={g._id}
-            className="bg-white rounded-lg border overflow-hidden"
-          >
-            {/* Preview section */}
-            <div className="aspect-square bg-gray-100 flex items-center justify-center">
-              {g.status === "pending" && (
-                <div className="text-center">
-                  <div className="animate-spin rounded-full h-8 w-8 border-2 border-gray-300 border-t-transparent mx-auto mb-2" />
-                  <p className="text-sm text-gray-500">Generating…</p>
-                </div>
-              )}
-
-              {g.status === "failed" && (
-                <div className="text-center p-4">
-                  <p className="text-sm text-red-500">Generation failed</p>
-                  {g.error && (
-                    <p className="text-xs text-gray-400 mt-1">{g.error}</p>
-                  )}
-                </div>
-              )}
-
-              {g.status === "completed" && g.imageUrls?.length ? (
-                g.imageUrls.length === 1 ? (
-                  // Single image — fill container
-                  <img
-                    src={g.imageUrls[0]}
-                    alt={g.prompt}
-                    className="w-full h-full object-cover"
-                    loading="lazy"
-                  />
-                ) : (
-                  // Multiple images — small grid
-                  <div className="grid grid-cols-2 gap-2 w-full h-full p-2">
-                    {g.imageUrls.map((url, i) => (
-                      <img
-                        key={i}
-                        src={url}
-                        alt={`${g.prompt} - ${i + 1}`}
-                        className="w-full h-full object-cover rounded"
-                        loading="lazy"
-                      />
-                    ))}
-                  </div>
-                )
-              ) : null}
-            </div>
-
-            {/* Info section */}
-            <div className="p-4">
-              <p className="text-sm font-medium text-gray-800">Prompt</p>
-              <p className="text-sm text-gray-600 mb-2 line-clamp-2">
-                {g.prompt}
-              </p>
-
-              {g.description && (
-                <>
-                  <p className="text-sm font-medium text-gray-800">
-                    Description
-                  </p>
-                  <p className="text-xs text-gray-500 mb-2 line-clamp-3">
-                    {g.description}
-                  </p>
-                </>
-              )}
-
-              <p className="text-xs text-gray-400">
-                {new Date(g._creationTime).toLocaleDateString()}
-              </p>
-            </div>
-          </div>
-        ))}
+    <div className={`flex ${isUser ? "justify-end" : "justify-start"}`}>
+      <div
+        className={`max-w-[80%] rounded-2xl px-4 py-3 text-sm leading-relaxed ${
+          isUser
+            ? "bg-primary text-primary-foreground"
+            : "bg-muted text-foreground"
+        }`}
+      >
+        {message.role === "assistant" && message.status === "pending" ? (
+          "…"
+        ) : message.role === "assistant" && message.type === "text" ? (
+          <p className="whitespace-pre-wrap">{message.content}</p>
+        ) : message.role === "user" ? (
+          <p className="whitespace-pre-wrap">{message.content}</p>
+        ) : (
+          ""
+        )}
       </div>
     </div>
   )

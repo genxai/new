@@ -1,4 +1,4 @@
-export type LogLevel = 'info' | 'warn' | 'error'
+export type LogLevel = "info" | "warn" | "error"
 
 export type LogPayload = {
   message?: string
@@ -22,15 +22,15 @@ type VercelResponse = {
 const parsePayload = (body: unknown): LogPayload | null => {
   if (!body) return null
 
-  if (typeof body === 'string') {
+  if (typeof body === "string") {
     try {
       return JSON.parse(body) as LogPayload
-    } catch (error) {
+    } catch {
       return { message: body }
     }
   }
 
-  if (typeof body === 'object') {
+  if (typeof body === "object") {
     return body as LogPayload
   }
 
@@ -38,36 +38,38 @@ const parsePayload = (body: unknown): LogPayload | null => {
 }
 
 const formatContext = (context: Record<string, unknown> | undefined) => {
-  if (!context) return ''
+  if (!context) return ""
   try {
     return JSON.stringify(context)
-  } catch (error) {
-    return '[unserializable context]'
+  } catch {
+    return "[unserializable context]"
   }
 }
 
 export default function handler(req: VercelRequest, res: VercelResponse) {
-  if (req.method !== 'POST') {
-    res.status(405).json({ error: 'Method not allowed' })
+  if (req.method !== "POST") {
+    res.status(405).json({ error: "Method not allowed" })
     return
   }
 
   const payload = parsePayload(req.body)
 
   if (!payload || !payload.message) {
-    res.status(400).json({ error: 'Missing log message' })
+    res.status(400).json({ error: "Missing log message" })
     return
   }
 
-  const level = payload.level ?? 'info'
+  const level = payload.level ?? "info"
   const contextString = formatContext(payload.context)
   const timestamp = payload.timestamp ?? new Date().toISOString()
   const prefix = `[client-log] ${timestamp}`
-  const logLine = contextString ? `${prefix} ${payload.message} ${contextString}` : `${prefix} ${payload.message}`
+  const logLine = contextString
+    ? `${prefix} ${payload.message} ${contextString}`
+    : `${prefix} ${payload.message}`
 
-  if (level === 'error') {
+  if (level === "error") {
     console.error(logLine)
-  } else if (level === 'warn') {
+  } else if (level === "warn") {
     console.warn(logLine)
   } else {
     console.log(logLine)

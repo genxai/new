@@ -34,6 +34,7 @@ export const generateImage = action({
 
     const usage = await ctx.runQuery(api.images.getGenerationUsage, {
       userId,
+      clientId: args.clientId,
     })
 
     const limit = isAuthenticated
@@ -73,7 +74,7 @@ export const generateImage = action({
         throw new Error("Model returned no image files")
       }
 
-      const storageIds: string[] = []
+      const storageIds: Array<Id<"_storage">> = []
       for (const [, file] of imageFiles.entries()) {
         const blob = new Blob([new Uint8Array(file.uint8Array)], {
           type: file.mediaType ?? "image/png",
@@ -84,12 +85,29 @@ export const generateImage = action({
 
       await ctx.runMutation(api.images.updateGeneration, {
         generationId,
-        storageIds: storageIds as any[],
+        storageIds,
         status: "completed",
         description: result.text,
       })
 
-      return { success: true, generationId }
+      const imageUrls = await Promise.all(
+        storageIds.map(async (id) => {
+          try {
+            const url = await ctx.storage.getUrl(id)
+            return url ?? undefined
+          } catch (error) {
+            console.error("Error creating storage URL", error)
+            return undefined
+          }
+        }),
+      )
+
+      return {
+        success: true,
+        generationId,
+        imageUrls: imageUrls.filter((url): url is string => Boolean(url)),
+        description: result.text,
+      }
     } catch (error) {
       await ctx.runMutation(api.images.updateGeneration, {
         generationId,
@@ -184,11 +202,30 @@ export const getUserGenerations = query({
 })
 
 export const getGenerationUsage = query({
-  args: { userId: v.string() },
+  args: {
+    userId: v.optional(v.string()),
+    clientId: v.optional(v.string()),
+  },
   handler: async (ctx, args) => {
+    const providedUserId = args.userId
+    const identity = providedUserId
+      ? null
+      : await ctx.auth.getUserIdentity()
+    const resolvedUserId = providedUserId
+      ? providedUserId
+      : identity?.subject
+        ? identity.subject
+        : args.clientId
+          ? `guest:${args.clientId}`
+          : null
+
+    if (!resolvedUserId) {
+      return { total: 0, completed: 0 }
+    }
+
     const generations = await ctx.db
       .query("imageGenerations")
-      .withIndex("by_user", (q) => q.eq("userId", args.userId))
+      .withIndex("by_user", (q) => q.eq("userId", resolvedUserId))
       .take(MAX_FREE_GENERATION_LIMIT + 1)
 
     let completed = 0
@@ -201,6 +238,50 @@ export const getGenerationUsage = query({
     return {
       total: generations.length,
       completed,
+    }
+  },
+})
+
+export const generateTextResponse = action({
+  args: {
+    prompt: v.string(),
+    clientId: v.optional(v.string()),
+  },
+  handler: async (ctx, args) => {
+    const identity = await ctx.auth.getUserIdentity()
+    const userId = identity?.subject
+      ? identity.subject
+      : args.clientId
+        ? `guest:${args.clientId}`
+        : null
+
+    if (!userId) {
+      throw new Error("Missing client identifier for guest session")
+    }
+
+    let result
+    try {
+      result = await generateText({
+        model: "google/gemini-2.0-flash",
+        providerOptions: {
+          google: {},
+        },
+        prompt: args.prompt,
+      })
+    } catch (error) {
+      console.error("Text generation request failed", error)
+      throw new Error("Text generation is temporarily unavailable")
+    }
+
+    const text = result.text?.trim()
+
+    if (!text) {
+      throw new Error("Model returned no text")
+    }
+
+    return {
+      success: true,
+      text,
     }
   },
 })

@@ -3,7 +3,10 @@ import { useEffect, useState } from "react"
 const STORAGE_KEY = "gen.new.client-id"
 
 const createClientId = () => {
-  if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") {
+  if (
+    typeof crypto !== "undefined" &&
+    typeof crypto.randomUUID === "function"
+  ) {
     return crypto.randomUUID()
   }
 
