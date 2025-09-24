@@ -37,8 +37,8 @@ export default function Workspace() {
   }
 
   const resolvedEmail = user.email?.trim() || undefined
-  const displayName = me.usernameDisplay ?? resolvedEmail ?? "Account"
-  const initials = (me.usernameDisplay ?? resolvedEmail ?? "?")
+  const displayName = resolvedEmail ?? me.usernameDisplay ?? "Account"
+  const initials = (resolvedEmail ?? me.usernameDisplay ?? "?")
     .slice(0, 1)
     .toUpperCase()
   const emailLabel = resolvedEmail ?? "Email unavailable"
@@ -76,9 +76,6 @@ export default function Workspace() {
                   )}
                 </Avatar>
                 <div className="space-y-1">
-                  <h2 className="text-xl font-semibold leading-tight">
-                    {displayName}
-                  </h2>
                   <p className="text-sm text-muted-foreground">{emailLabel}</p>
                 </div>
               </div>
