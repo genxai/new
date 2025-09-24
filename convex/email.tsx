@@ -33,6 +33,9 @@ const dispatchEmail = async ({
   const text = await render(template, { plainText: true })
 
   if (mail.preview) {
+    console.warn(
+      "MAIL_CONSOLE_PREVIEW=true. Emails are logged but not delivered. Set MAIL_CONSOLE_PREVIEW=false and provide RESEND_API_KEY to send real emails.",
+    )
     console.log(
       `[mail preview] ${JSON.stringify(
         {
