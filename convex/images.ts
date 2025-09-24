@@ -258,6 +258,7 @@ export const generateTextResponse = action({
     }
 
     let result
+    let text: string | null = null
     try {
       result = await generateText({
         model: "google/gemini-2.0-flash",
@@ -266,20 +267,18 @@ export const generateTextResponse = action({
         },
         prompt: args.prompt,
       })
+      text = result.text?.trim() ?? null
     } catch (error) {
       console.error("Text generation request failed", error)
-      throw new Error("Text generation is temporarily unavailable")
-    }
-
-    const text = result.text?.trim()
-
-    if (!text) {
-      throw new Error("Model returned no text")
+      text = null
     }
 
     return {
-      success: true,
-      text,
+      success: Boolean(text),
+      text:
+        text ??
+        "Text generation is temporarily unavailable. Please try again later.",
+      isFallback: !text,
     }
   },
 })

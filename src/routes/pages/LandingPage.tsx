@@ -184,6 +184,12 @@ export default function LandingPage() {
               : message,
           ),
         )
+
+        if (result.isFallback) {
+          toast.info(
+            "Text generation is temporarily unavailable. Try again later.",
+          )
+        }
       } else {
         if (!clientId) {
           toast.info("Setting up your session, please try again.")
