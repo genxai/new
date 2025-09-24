@@ -22,6 +22,7 @@ import type * as emails_verifyOTP from "../emails/verifyOTP.js";
 import type * as hash from "../hash.js";
 import type * as http from "../http.js";
 import type * as identity from "../identity.js";
+import type * as images from "../images.js";
 import type * as rateLimitStorage from "../rateLimitStorage.js";
 import type * as settings_privacy from "../settings_privacy.js";
 import type * as settings_security from "../settings_security.js";
@@ -56,6 +57,7 @@ declare const fullApi: ApiFromModules<{
   hash: typeof hash;
   http: typeof http;
   identity: typeof identity;
+  images: typeof images;
   rateLimitStorage: typeof rateLimitStorage;
   settings_privacy: typeof settings_privacy;
   settings_security: typeof settings_security;

@@ -1,7 +1,7 @@
 import { useState } from "react"
 import { useNavigate, Link } from "react-router-dom"
 import { useAction, useConvexAuth, useQuery } from "convex/react"
-import { Github, UserRound } from "lucide-react"
+import { Github, Sparkles, UserRound } from "lucide-react"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { toast } from "@/lib/toast"
@@ -160,9 +160,29 @@ function GenerationsGrid() {
 
   if (!generations?.length) {
     return (
-      <div className="max-w-3xl mx-auto px-4 pb-8">
-        <div className="text-center py-12 bg-white rounded-lg border">
-          <p className="text-gray-500">No images yet. Generate one above!</p>
+      <div className="max-w-4xl mx-auto px-4 pb-16">
+        <div className="relative overflow-hidden rounded-3xl border border-border/50 bg-muted/30 px-8 py-14 text-center shadow-lg transition-colors dark:border-border/60 dark:bg-gradient-to-br dark:from-slate-950 dark:via-slate-900 dark:to-slate-950">
+          <div
+            className="pointer-events-none absolute inset-0 opacity-60 dark:opacity-100"
+            aria-hidden
+          >
+            <div className="absolute -top-24 left-1/2 h-64 w-64 -translate-x-1/2 rounded-full bg-primary/20 blur-3xl" />
+            <div className="absolute -bottom-24 right-12 h-56 w-56 rounded-full bg-emerald-400/20 blur-3xl" />
+          </div>
+
+          <div className="relative z-10 flex flex-col items-center gap-5">
+            <span className="flex h-14 w-14 items-center justify-center rounded-full bg-primary/15 text-primary backdrop-blur">
+              <Sparkles className="h-6 w-6" aria-hidden />
+            </span>
+            <div className="space-y-2">
+              <h2 className="text-2xl font-semibold tracking-tight text-foreground">
+                No images yet
+              </h2>
+              <p className="text-sm text-muted-foreground">
+                Start with a prompt above and we'll keep your fresh generations right here.
+              </p>
+            </div>
+          </div>
         </div>
       </div>
     )
