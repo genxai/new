@@ -51,15 +51,19 @@ export default function LandingPage() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
-    if (prompt.trim()) {
-      // For now, just navigate to sign-in with the prompt
-      // Later you can modify this to handle the generation
-      navigate("/auth", { state: { prompt } })
-      toast.info({
-        title: "Sign in required",
-        description: "Sign in to start generating your free images.",
-      })
+    const trimmedPrompt = prompt.trim()
+    if (!trimmedPrompt) {
+      toast.error("Enter prompt first")
+      return
     }
+
+    // For now, just navigate to sign-in with the prompt
+    // Later you can modify this to handle the generation
+    navigate("/auth", { state: { prompt: trimmedPrompt } })
+    toast.info({
+      title: "Sign in required",
+      description: "Sign in to start generating your free images.",
+    })
   }
 
   return (
@@ -71,18 +75,20 @@ export default function LandingPage() {
             <Button
               variant="ghost"
               size="icon"
-              render={
+              aria-label="Open gen.new GitHub repository"
+              render={({ children, ...props }) => (
                 <a
+                  {...props}
                   href="https://github.com/genxai/new"
                   target="_blank"
                   rel="noopener noreferrer"
-                  aria-label="Open gen.new GitHub repository"
                 >
+                  {children}
                   <span className="sr-only">
                     Open gen.new GitHub repository
                   </span>
                 </a>
-              }
+              )}
             >
               <Github className="size-5" aria-hidden />
             </Button>
