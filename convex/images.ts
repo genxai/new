@@ -3,9 +3,8 @@ import { query, mutation, action } from "./_generated/server"
 import { api } from "./_generated/api"
 import { createGateway, generateText } from "ai"
 
-console.log("AI_GATEWAY_API_KEY:", process.env.AI_GATEWAY_API_KEY)
 const google = createGateway({
-  apiKey: "vck_3muXToA8ibQyssv9HxsmB81YjMSRztYgxpws1Srn6Bto1A3Yrx0W4jto",
+  apiKey: "",
 })
 
 export const generateImage = action({
