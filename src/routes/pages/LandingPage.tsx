@@ -1,7 +1,7 @@
 import { useState } from "react"
 import { useNavigate, Link } from "react-router-dom"
 import { useConvexAuth } from "convex/react"
-import { UserRound } from "lucide-react"
+import { Github, UserRound } from "lucide-react"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 
@@ -62,7 +62,26 @@ export default function LandingPage() {
       <header className="border-b border-border/40">
         <div className="flex w-full items-center justify-between px-4 py-4 sm:px-6 lg:px-8">
           <SiteBrand />
-          <AuthAction isAuthenticated={isAuthenticated} isLoading={isLoading} />
+          <div className="flex items-center gap-2">
+            <Button
+              variant="ghost"
+              size="icon"
+              render={
+                <a
+                  href="https://github.com/genxai/new"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                />
+              }
+              aria-label="Open gen.new GitHub repository"
+            >
+              <Github className="size-5" aria-hidden />
+            </Button>
+            <AuthAction
+              isAuthenticated={isAuthenticated}
+              isLoading={isLoading}
+            />
+          </div>
         </div>
       </header>
       <main className="flex-1 flex items-center justify-center px-4">
