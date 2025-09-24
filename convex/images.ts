@@ -2,14 +2,53 @@ import { v } from "convex/values"
 import { query, mutation, action } from "./_generated/server"
 import { api } from "./_generated/api"
 import { generateText } from "ai"
+import type { Id } from "./_generated/dataModel"
+
+const FREE_GENERATION_LIMITS = {
+  anonymous: 1,
+  authenticated: 3,
+} as const
+
+const MAX_FREE_GENERATION_LIMIT = Math.max(
+  FREE_GENERATION_LIMITS.anonymous,
+  FREE_GENERATION_LIMITS.authenticated,
+)
 
 export const generateImage = action({
-  args: { prompt: v.string() },
+  args: {
+    prompt: v.string(),
+    clientId: v.optional(v.string()),
+  },
   handler: async (ctx, args) => {
-    const generationId: any = await ctx.runMutation(
+    const identity = await ctx.auth.getUserIdentity()
+    const isAuthenticated = Boolean(identity)
+    const userId = identity?.subject
+      ? identity.subject
+      : args.clientId
+        ? `guest:${args.clientId}`
+        : null
+
+    if (!userId) {
+      throw new Error("Missing client identifier for guest session")
+    }
+
+    const usage = await ctx.runQuery(api.images.getGenerationUsage, {
+      userId,
+    })
+
+    const limit = isAuthenticated
+      ? FREE_GENERATION_LIMITS.authenticated
+      : FREE_GENERATION_LIMITS.anonymous
+
+    if (usage.total >= limit) {
+      throw new Error("Free generation limit reached")
+    }
+
+    const generationId: Id<"imageGenerations"> = await ctx.runMutation(
       api.images.createGeneration,
       {
         prompt: args.prompt,
+        userId,
       },
     )
 
@@ -63,14 +102,10 @@ export const generateImage = action({
 })
 
 export const createGeneration = mutation({
-  args: { prompt: v.string() },
+  args: { prompt: v.string(), userId: v.string() },
   handler: async (ctx, args) => {
-    // const identity = await ctx.auth.getUserIdentity()
-    // if (!identity) throw new Error("Not authenticated")
-    // const userId = identity.subject
-
     return await ctx.db.insert("imageGenerations", {
-      userId: "anonymous",
+      userId: args.userId,
       prompt: args.prompt,
       status: "pending",
     })
@@ -105,10 +140,22 @@ export const updateGeneration = mutation({
 })
 
 export const getUserGenerations = query({
-  args: {},
-  handler: async (ctx) => {
+  args: { clientId: v.optional(v.string()) },
+  handler: async (ctx, args) => {
+    const identity = await ctx.auth.getUserIdentity()
+    const userId = identity?.subject
+      ? identity.subject
+      : args.clientId
+        ? `guest:${args.clientId}`
+        : null
+
+    if (!userId) {
+      return []
+    }
+
     const generations = await ctx.db
       .query("imageGenerations")
+      .withIndex("by_user", (q) => q.eq("userId", userId))
       .order("desc")
       .take(20)
 
@@ -133,5 +180,27 @@ export const getUserGenerations = query({
     )
 
     return withUrls
+  },
+})
+
+export const getGenerationUsage = query({
+  args: { userId: v.string() },
+  handler: async (ctx, args) => {
+    const generations = await ctx.db
+      .query("imageGenerations")
+      .withIndex("by_user", (q) => q.eq("userId", args.userId))
+      .take(MAX_FREE_GENERATION_LIMIT + 1)
+
+    let completed = 0
+    for (const generation of generations) {
+      if (generation.status === "completed") {
+        completed += 1
+      }
+    }
+
+    return {
+      total: generations.length,
+      completed,
+    }
   },
 })

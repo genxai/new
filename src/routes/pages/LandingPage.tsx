@@ -1,4 +1,4 @@
-import { useState } from "react"
+import { useEffect, useMemo, useState } from "react"
 import { useNavigate, Link } from "react-router-dom"
 import { useAction, useConvexAuth, useQuery } from "convex/react"
 import { Github, Sparkles, UserRound } from "lucide-react"
@@ -6,6 +6,11 @@ import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { toast } from "@/lib/toast"
 import { api } from "../../../convex/_generated/api"
+import { useClientId } from "@/hooks/useClientId"
+
+const GUEST_GENERATION_STORAGE_KEY = "gen.new.guest-generations"
+const FREE_GUEST_GENERATIONS = 1
+const FREE_AUTH_GENERATIONS = 3
 
 type AuthActionProps = {
   isAuthenticated: boolean
@@ -47,9 +52,36 @@ function AuthAction({ isAuthenticated, isLoading }: AuthActionProps) {
 
 export default function LandingPage() {
   const [prompt, setPrompt] = useState("")
+  const [isGenerating, setIsGenerating] = useState(false)
+  const [guestGenerationCount, setGuestGenerationCount] = useState(0)
   const navigate = useNavigate()
   const { isAuthenticated, isLoading } = useConvexAuth()
   const generateImage = useAction(api.images.generateImage)
+  const clientId = useClientId()
+  const generationsArgs = useMemo(
+    () => ({ clientId: clientId ?? undefined }),
+    [clientId],
+  )
+  const generationResult = useQuery(api.images.getUserGenerations, generationsArgs)
+  const generations = generationResult ?? []
+
+  useEffect(() => {
+    if (typeof window === "undefined") {
+      return
+    }
+
+    const stored = window.localStorage.getItem(
+      GUEST_GENERATION_STORAGE_KEY,
+    )
+    if (!stored) {
+      return
+    }
+
+    const parsed = Number.parseInt(stored, 10)
+    if (!Number.isNaN(parsed)) {
+      setGuestGenerationCount(parsed)
+    }
+  }, [])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -59,8 +91,57 @@ export default function LandingPage() {
       return
     }
 
-    const result = await generateImage({ prompt: trimmedPrompt })
-    console.log("Image generation result:", result)
+    if (isGenerating) {
+      return
+    }
+
+    if (!isAuthenticated) {
+      if (!clientId) {
+        toast.info("Setting up your session, please try again.")
+        return
+      }
+
+      if (guestGenerationCount >= FREE_GUEST_GENERATIONS) {
+        toast.info({
+          title: "Create an account",
+          description: "Sign in to keep generating new images.",
+        })
+        navigate("/auth")
+        return
+      }
+    } else if (generations.length >= FREE_AUTH_GENERATIONS) {
+      toast.info({
+        title: "Free limit reached",
+        description: "You've used all free images. Check back later!",
+      })
+      return
+    }
+
+    try {
+      setIsGenerating(true)
+      const result = await generateImage({
+        prompt: trimmedPrompt,
+        clientId: clientId ?? undefined,
+      })
+      console.log("Image generation result:", result)
+
+      if (!isAuthenticated) {
+        const nextCount = guestGenerationCount + 1
+        setGuestGenerationCount(nextCount)
+        if (typeof window !== "undefined") {
+          window.localStorage.setItem(
+            GUEST_GENERATION_STORAGE_KEY,
+            String(nextCount),
+          )
+        }
+      }
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : "Unable to generate image"
+      toast.error(message)
+    } finally {
+      setIsGenerating(false)
+    }
 
     // For now, just navigate to sign-in with the prompt
     // Later you can modify this to handle the generation
@@ -129,8 +210,12 @@ export default function LandingPage() {
               onChange={(e) => setPrompt(e.target.value)}
               className="w-full"
             />
-            <Button type="submit" className="w-full">
-              Generate
+            <Button
+              type="submit"
+              className="w-full"
+              disabled={isGenerating || (!isAuthenticated && !clientId)}
+            >
+              {isGenerating ? "Generating…" : "Generate"}
             </Button>
           </form>
 
@@ -150,15 +235,27 @@ export default function LandingPage() {
         </div>
       </main>
 
-      <GenerationsGrid />
+      <GenerationsGrid generations={generations} />
     </div>
   )
 }
 
-function GenerationsGrid() {
-  const generations = useQuery(api.images.getUserGenerations) || []
+type GenerationRecord = {
+  _id: string
+  prompt: string
+  status: "pending" | "completed" | "failed"
+  description?: string
+  error?: string
+  imageUrls: string[]
+  _creationTime: number
+}
 
-  if (!generations?.length) {
+function GenerationsGrid({
+  generations,
+}: {
+  generations: GenerationRecord[]
+}) {
+  if (!generations.length) {
     return (
       <div className="max-w-4xl mx-auto px-4 pb-16">
         <div className="relative overflow-hidden rounded-3xl border border-border/50 bg-muted/30 px-8 py-14 text-center shadow-lg transition-colors dark:border-border/60 dark:bg-gradient-to-br dark:from-slate-950 dark:via-slate-900 dark:to-slate-950">
