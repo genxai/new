@@ -90,6 +90,13 @@ const schema = defineSchema({
   })
     .index("by_user", ["userId"])
     .index("by_status", ["status"]),
+  textInteractions: defineTable({
+    userId: v.string(),
+    prompt: v.string(),
+    success: v.boolean(),
+    fallback: v.optional(v.boolean()),
+    error: v.optional(v.string()),
+  }).index("by_user", ["userId"]),
 })
 
 export default schema

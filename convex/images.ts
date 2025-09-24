@@ -41,7 +41,7 @@ export const generateImage = action({
       ? FREE_GENERATION_LIMITS.authenticated
       : FREE_GENERATION_LIMITS.anonymous
 
-    if (usage.total >= limit) {
+    if (usage.imageTotal >= limit) {
       throw new Error("Free generation limit reached")
     }
 
@@ -218,7 +218,7 @@ export const getGenerationUsage = query({
           : null
 
     if (!resolvedUserId) {
-      return { total: 0, completed: 0 }
+      return { imageTotal: 0, completed: 0, textCount: 0 }
     }
 
     const generations = await ctx.db
@@ -233,9 +233,15 @@ export const getGenerationUsage = query({
       }
     }
 
+    const textInteractions = await ctx.db
+      .query("textInteractions")
+      .withIndex("by_user", (q) => q.eq("userId", resolvedUserId))
+      .take(MAX_FREE_GENERATION_LIMIT + 1)
+
     return {
-      total: generations.length,
+      imageTotal: generations.length,
       completed,
+      textCount: textInteractions.length,
     }
   },
 })
@@ -257,8 +263,21 @@ export const generateTextResponse = action({
       throw new Error("Missing client identifier for guest session")
     }
 
+    const textUsage = await ctx.runQuery(api.images.getGenerationUsage, {
+      userId,
+      clientId: args.clientId,
+    })
+
+    const limit = identity ? FREE_GENERATION_LIMITS.authenticated : FREE_GENERATION_LIMITS.anonymous
+
+    if (textUsage.textCount >= limit) {
+      throw new Error("Free text generation limit reached")
+    }
+
     let result
     let text: string | null = null
+    let isFallback = false
+    let errorMessage: string | undefined
     try {
       result = await generateText({
         model: "google/gemini-2.0-flash",
@@ -270,15 +289,36 @@ export const generateTextResponse = action({
       text = result.text?.trim() ?? null
     } catch (error) {
       console.error("Text generation request failed", error)
+      errorMessage = error instanceof Error ? error.message : "Unknown error"
       text = null
     }
 
+    if (!text) {
+      isFallback = true
+      if (!errorMessage) {
+        errorMessage = "Model returned no text"
+      }
+      text = "Text generation is temporarily unavailable. Please try again later."
+    }
+
+    const success = !isFallback
+
+    try {
+      await ctx.runMutation(api.images.logTextInteraction, {
+        userId,
+        prompt: args.prompt,
+        success,
+        fallback: isFallback ? true : undefined,
+        error: success ? undefined : errorMessage,
+      })
+    } catch (logError) {
+      console.error("Failed to log text interaction", logError)
+    }
+
     return {
-      success: Boolean(text),
-      text:
-        text ??
-        "Text generation is temporarily unavailable. Please try again later.",
-      isFallback: !text,
+      success,
+      text,
+      isFallback,
     }
   },
 })

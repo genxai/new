@@ -313,7 +313,7 @@ export default function LandingPage() {
           <div className="text-center space-y-2">
             <h1 className="text-3xl font-bold">Generate anything</h1>
             <p className="text-muted-foreground">
-              Ask a question or switch to the image mode to create visuals.
+              Ask questions or generate images
             </p>
           </div>
 
