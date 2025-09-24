@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react"
-import { Loader2 } from "lucide-react"
+import { Home, Loader2 } from "lucide-react"
 import { Link, useNavigate } from "react-router-dom"
 import { useConvexAuth } from "convex/react"
 import { useForm } from "react-hook-form"
@@ -28,8 +28,6 @@ import { SessionFallback } from "@/routes/guards"
 import { SignUpSchema, type SignUpValues } from "../shared/auth-schemas"
 import { pickIdentityPreviewSample } from "../shared/identity"
 import { PublicPageShell } from "@/components/PublicPageShell"
-import { PassphraseInput } from "@/components/PassphraseInput"
-import { copyPassphraseToClipboard, generatePassphrase } from "@/lib/passphrase"
 import { resolveVerificationSuccessUrl } from "@/lib/verification"
 import {
   assertAcceptablePassphrase,
@@ -166,7 +164,20 @@ export default function SignUp() {
   }
 
   return (
-    <PublicPageShell contentClassName="py-6 sm:py-10">
+    <PublicPageShell
+      contentClassName="py-6 sm:py-10"
+      headerContainerClassName="mx-0 max-w-none"
+      brand={
+        <Button
+          render={<Link to="/" />}
+          variant="ghost"
+          size="icon"
+          aria-label="Go to home"
+        >
+          <Home className="size-5" aria-hidden />
+        </Button>
+      }
+    >
       <div className="mx-auto flex h-full w-full max-w-xl items-center justify-center">
         <Card className="w-full border shadow-sm">
           <CardHeader className="space-y-4">
@@ -212,39 +223,12 @@ export default function SignUp() {
                     name="password"
                     render={({ field, fieldState }) => (
                       <FormItem className="space-y-2">
-                        <div className="flex items-center justify-between">
-                          <FormLabel htmlFor="password">Password</FormLabel>
-                          <Button
-                            type="button"
-                            variant="link"
-                            className="h-auto px-0 py-0 text-xs font-medium text-muted-foreground underline underline-offset-4 hover:text-foreground"
-                            onClick={async () => {
-                              try {
-                                const generated = generatePassphrase(24)
-                                form.setValue("password", generated, {
-                                  shouldDirty: true,
-                                  shouldValidate: true,
-                                })
-                                form.setValue("passwordConfirmation", generated, {
-                                  shouldDirty: true,
-                                  shouldValidate: true,
-                                })
-                                await copyPassphraseToClipboard(generated)
-                                toast.info(
-                                  "Generated password copied to your clipboard.",
-                                )
-                              } catch {
-                                // Silent failure per requirements.
-                              }
-                            }}
-                          >
-                            Generate
-                          </Button>
-                        </div>
+                        <FormLabel htmlFor="password">Password</FormLabel>
                         <FormControl>
-                          <PassphraseInput
+                          <Input
                             {...field}
                             id="password"
+                            type="password"
                             placeholder="Password"
                             autoComplete="new-password"
                             required
@@ -267,9 +251,10 @@ export default function SignUp() {
                           Confirm password
                         </FormLabel>
                         <FormControl>
-                          <PassphraseInput
+                          <Input
                             {...field}
                             id="password-confirmation"
+                            type="password"
                             placeholder="Confirm password"
                             autoComplete="new-password"
                             required

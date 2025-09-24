@@ -18,6 +18,7 @@ const useConvexAuthMock = vi.fn()
 const sendVerificationOtpMock = vi.fn()
 const signInEmailOtpMock = vi.fn()
 const signInEmailPasswordMock = vi.fn()
+const signInSocialMock = vi.fn()
 const { toastSuccessMock, toastErrorMock } = vi.hoisted(() => ({
   toastSuccessMock: vi.fn(),
   toastErrorMock: vi.fn(),
@@ -39,6 +40,8 @@ vi.mock("@/lib/auth-client", () => ({
         signInEmailOtpMock(args, options),
       email: (args: unknown, options?: any) =>
         signInEmailPasswordMock(args, options),
+      social: (args: unknown, options?: any) =>
+        signInSocialMock(args, options),
     },
     emailOtp: {
       sendVerificationOtp: (args: unknown, options?: any) =>
@@ -90,6 +93,7 @@ beforeEach(() => {
   sendVerificationOtpMock.mockReset()
   signInEmailOtpMock.mockReset()
   signInEmailPasswordMock.mockReset()
+  signInSocialMock.mockReset()
   toastSuccessMock.mockReset()
   toastErrorMock.mockReset()
 
@@ -116,6 +120,11 @@ beforeEach(() => {
       options?.onSuccess?.()
     },
   )
+
+  signInSocialMock.mockImplementation(async (_args: unknown, options) => {
+    options?.onRequest?.()
+    options?.onSuccess?.()
+  })
 
   window.matchMedia = vi.fn().mockImplementation((query: string) => ({
     matches: false,
@@ -209,6 +218,25 @@ describe("SignIn", () => {
     expect(
       within(otpPanel).getByLabelText(/verification code/i),
     ).toBeInTheDocument()
+  })
+
+  it("initiates Google sign in when selected", async () => {
+    renderWithProviders(<SignIn />)
+
+    fireEvent.click(screen.getByRole("tab", { name: /google/i }))
+
+    const googlePanel = screen.getByRole("tabpanel", { name: /google/i })
+    const googleButton = within(googlePanel).getByRole("button", {
+      name: /continue with google/i,
+    })
+
+    fireEvent.click(googleButton)
+
+    await waitFor(() => {
+      expect(signInSocialMock).toHaveBeenCalledTimes(1)
+      const [payload] = signInSocialMock.mock.calls[0] ?? []
+      expect(payload).toEqual({ provider: "google" })
+    })
   })
 
   it("verifies the code after it has been sent", async () => {
