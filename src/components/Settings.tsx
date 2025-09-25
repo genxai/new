@@ -1,3 +1,4 @@
+import { useMemo } from "react"
 import { useNavigate } from "react-router-dom"
 import { ArrowLeft } from "lucide-react"
 import { useQuery } from "convex/react"
@@ -10,6 +11,7 @@ import ProfileTab from "@/features/settings/profile/ProfileTab"
 import SecurityTab from "@/features/settings/security/SecurityTab"
 import PrivacyTab from "@/features/settings/privacy/PrivacyTab"
 import { api } from "@/convex/api"
+import UsageLimitsSection from "@/components/UsageLimitsSection"
 
 const SETTINGS_TABS = [
   { value: "profile", label: "Profile" },
@@ -21,8 +23,11 @@ export default function Settings() {
   const navigate = useNavigate()
   const currentUser = useQuery(api.auth.getCurrentUser)
   const identity = useQuery(api.identity.getMe, {})
+  const usageArgs = useMemo(() => ({}), [])
+  const usage = useQuery(api.images.getGenerationUsage, usageArgs)
 
   const isLoading = currentUser === undefined || identity === undefined
+  const isUsageLoading = usage === undefined
 
   const handleBack = () => {
     navigate("/settings")
@@ -43,6 +48,7 @@ export default function Settings() {
           </Button>
         </CardHeader>
         <CardContent className="p-6 pt-0 space-y-6">
+          <UsageLimitsSection usage={usage ?? null} isLoading={isUsageLoading} />
           <Tabs defaultValue="profile" className="w-full">
             <TabsList className="w-full sm:w-auto justify-start">
               {SETTINGS_TABS.map((tab) => (

@@ -32,28 +32,7 @@ describe("Settings", () => {
     useQueryMock.mockReset()
     useMutationMock.mockReset()
     useMutationMock.mockReturnValue(vi.fn())
-    useQueryMock.mockImplementation((query) => {
-      if (query === api.auth.getCurrentUser) {
-        return {
-          email: "person@gen.new",
-          image: null,
-        }
-      }
-      if (query === api.identity.getMe) {
-        return {
-          usernameDisplay: "Person",
-          usernameLower: "person",
-        }
-      }
-      if (query === api.settings_security.getOverview) {
-        return {
-          hasPassphrase: true,
-          twoFactorEnabled: false,
-          risks: [],
-        }
-      }
-      return undefined
-    })
+    useQueryMock.mockImplementation(() => undefined)
     window.matchMedia = vi.fn(() => ({
       matches: false,
       media: "(prefers-color-scheme: dark)",
@@ -66,6 +45,26 @@ describe("Settings", () => {
   })
 
   it("renders tabs and navigates back to settings", () => {
+    useQueryMock
+      .mockReturnValueOnce({
+        email: "person@gen.new",
+        image: null,
+      })
+      .mockReturnValueOnce({
+        usernameDisplay: "Person",
+        usernameLower: "person",
+      })
+      .mockReturnValueOnce({
+        imageTotal: 1,
+        completed: 1,
+        textCount: 2,
+      })
+      .mockReturnValueOnce({
+        hasPassphrase: true,
+        twoFactorEnabled: false,
+        risks: [],
+      })
+
     render(
       <ThemeProvider>
         <Settings />
@@ -77,6 +76,21 @@ describe("Settings", () => {
     })
 
     expect(backButton).toBeInTheDocument()
+    expect(
+      screen.getByRole("heading", { name: /usage limits/i }),
+    ).toBeInTheDocument()
+    expect(
+      screen.getByText(/text messages/i, { selector: "dt" }),
+    ).toBeInTheDocument()
+    expect(
+      screen.getByText(/image generations/i, { selector: "dt" }),
+    ).toBeInTheDocument()
+    expect(screen.getByText(/you've used 2 of 3 text messages/i)).toBeInTheDocument()
+    expect(screen.getByText(/2 \/ 3 used/i)).toBeInTheDocument()
+    expect(screen.getByText(/1 \/ 3 used/i)).toBeInTheDocument()
+    expect(screen.getByText(/1 left today/i)).toBeInTheDocument()
+    expect(screen.getByText(/2 left today/i)).toBeInTheDocument()
+    expect(screen.getByText(/limits reset every day/i)).toBeInTheDocument()
     expect(screen.getByRole("tab", { name: "Profile" })).toBeInTheDocument()
     expect(screen.getByRole("tab", { name: "Security" })).toBeInTheDocument()
     expect(screen.getByRole("tab", { name: "Privacy" })).toBeInTheDocument()

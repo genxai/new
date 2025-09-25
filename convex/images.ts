@@ -3,11 +3,7 @@ import { query, mutation, action } from "./_generated/server"
 import { api } from "./_generated/api"
 import { generateText } from "ai"
 import type { Id } from "./_generated/dataModel"
-
-const FREE_GENERATION_LIMITS = {
-  anonymous: 1,
-  authenticated: 3,
-} as const
+import { FREE_GENERATION_LIMITS } from "../shared/usage-limits"
 
 const MAX_FREE_GENERATION_LIMIT = Math.max(
   FREE_GENERATION_LIMITS.anonymous,

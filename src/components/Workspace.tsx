@@ -2,6 +2,7 @@
  * PRE-FLIGHT: Follow AGENTS.md hard rules.
  * Workspace surface for managing account tools.
  */
+import { useMemo } from "react"
 import { Link } from "react-router-dom"
 import { useQuery } from "convex/react"
 import { Card, CardHeader, CardContent } from "@/components/ui/card"
@@ -12,10 +13,13 @@ import { Skeleton } from "@/components/ui/skeleton"
 import { Home, LogOut } from "lucide-react"
 import { api } from "../../convex/_generated/api"
 import { authClient } from "@/lib/auth-client"
+import UsageLimitsSection from "@/components/UsageLimitsSection"
 
 export default function Workspace() {
   const user = useQuery(api.auth.getCurrentUser)
   const me = useQuery(api.identity.getMe, {})
+  const usageArgs = useMemo(() => ({}), [])
+  const usage = useQuery(api.images.getGenerationUsage, usageArgs)
 
   const handleSignOut = () => {
     void authClient.signOut()
@@ -95,6 +99,16 @@ export default function Workspace() {
               </div>
             </div>
           </CardHeader>
+        </Card>
+      </section>
+      <section>
+        <Card className="border shadow-sm">
+          <CardContent className="p-6">
+            <UsageLimitsSection
+              usage={usage ?? null}
+              isLoading={usage === undefined}
+            />
+          </CardContent>
         </Card>
       </section>
     </div>

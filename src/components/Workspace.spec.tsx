@@ -2,9 +2,11 @@ import "@testing-library/jest-dom/vitest"
 import { render, screen } from "@testing-library/react"
 import { ThemeProvider } from "@/providers/theme-provider"
 import { beforeEach, describe, expect, it, vi } from "vitest"
+import { MemoryRouter } from "react-router-dom"
 
 import Workspace from "./Workspace"
 import { useQuery } from "convex/react"
+import { api } from "../../convex/_generated/api"
 
 const navigateMock = vi.fn()
 
@@ -49,32 +51,54 @@ describe("Workspace", () => {
       dispatchEvent: vi.fn(() => false),
     })) as unknown as typeof window.matchMedia
     document.documentElement.classList.remove("light", "dark")
+    mockUseQuery.mockImplementation(() => undefined)
   })
 
   it("renders a fallback initial and heading when the user is missing a name", () => {
-    mockUseQuery.mockReturnValue({
-      email: "person@gen.new",
-      image: null,
-      name: null,
-    } satisfies MockUser)
+    mockUseQuery
+      .mockReturnValueOnce({
+        email: "person@gen.new",
+        image: null,
+        name: null,
+      } satisfies MockUser)
+      .mockReturnValueOnce({
+        usernameDisplay: "Person",
+        usernameLower: "person",
+      })
+      .mockReturnValueOnce({
+        imageTotal: 1,
+        completed: 1,
+        textCount: 2,
+      })
 
     render(
-      <ThemeProvider>
-        <Workspace />
-      </ThemeProvider>,
+      <MemoryRouter>
+        <ThemeProvider>
+          <Workspace />
+        </ThemeProvider>
+      </MemoryRouter>,
     )
 
     expect(screen.getByText("P")).toBeInTheDocument()
     expect(
       screen.getByRole("heading", { name: "Settings" }),
     ).toBeInTheDocument()
-    expect(
-      screen.getByRole("heading", { name: "person@gen.new" }),
-    ).toBeInTheDocument()
+    expect(screen.getByText("person@gen.new")).toBeInTheDocument()
     expect(
       screen.getByRole("img", { name: "person@gen.new" }),
     ).toBeInTheDocument()
-    expect(screen.getByRole("button", { name: "Settings" })).toBeInTheDocument()
     expect(screen.queryByText("Delete account")).not.toBeInTheDocument()
+    expect(
+      screen.getByRole("heading", { name: /usage limits/i }),
+    ).toBeInTheDocument()
+    expect(
+      screen.getByText(/text messages/i, { selector: "dt" }),
+    ).toBeInTheDocument()
+    expect(screen.getByText(/you've used 2 of 3 text messages/i)).toBeInTheDocument()
+    expect(screen.getByText(/2 \/ 3 used/i)).toBeInTheDocument()
+    expect(screen.getByText(/1 \/ 3 used/i)).toBeInTheDocument()
+    expect(screen.getByText(/1 left today/i)).toBeInTheDocument()
+    expect(screen.getByText(/2 left today/i)).toBeInTheDocument()
+    expect(screen.getByText(/limits reset every day/i)).toBeInTheDocument()
   })
 })

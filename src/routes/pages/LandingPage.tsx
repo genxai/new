@@ -5,13 +5,14 @@ import { Github, Image as ImageIcon, Sparkles, UserRound } from "lucide-react"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { toast } from "@/lib/toast"
-import { api } from "../../../convex/_generated/api"
 import { useClientId } from "@/hooks/useClientId"
+import { FREE_GENERATION_LIMITS } from "@/shared/usage-limits"
+import { api } from "../../../convex/_generated/api"
 
 const GUEST_GENERATION_STORAGE_KEY = "gen.new.guest-generations"
 const GUEST_TEXT_STORAGE_KEY = "gen.new.guest-text"
-const FREE_GUEST_GENERATIONS = 1
-const FREE_AUTH_GENERATIONS = 3
+const FREE_GUEST_GENERATIONS = FREE_GENERATION_LIMITS.anonymous
+const FREE_AUTH_GENERATIONS = FREE_GENERATION_LIMITS.authenticated
 
 type ChatMessage =
   | {
