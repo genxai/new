@@ -38,7 +38,7 @@ import { PublicPageShell } from "@/components/PublicPageShell"
 import { resolveVerificationSuccessUrl } from "@/lib/verification"
 
 const COOLDOWN_SECONDS = 30
-type SignInMethod = "otp" | "password" | "google"
+type SignInMethod = "otp" | "password" // Re-add "google" when provider is ready
 
 export default function SignIn() {
   const { isAuthenticated, isLoading } = useConvexAuth()
@@ -67,7 +67,7 @@ export default function SignIn() {
     reValidateMode: "onSubmit",
   })
   const [passwordLoading, setPasswordLoading] = useState(false)
-  const [googleLoading, setGoogleLoading] = useState(false)
+  // const [googleLoading, setGoogleLoading] = useState(false)
   const navigate = useNavigate()
   const verificationSuccessUrl = resolveVerificationSuccessUrl()
   const emailValue = form.watch("email")
@@ -229,40 +229,41 @@ export default function SignIn() {
     },
   )
 
-  const signInWithGoogle = async () => {
-    if (googleLoading) {
-      return
-    }
-
-    let handledError = false
-    try {
-      await authClient.signIn.social(
-        { provider: "google" },
-        {
-          onRequest: () => {
-            setGoogleLoading(true)
-          },
-          onSuccess: () => {
-            setGoogleLoading(false)
-          },
-          onError: (ctx) => {
-            handledError = true
-            setGoogleLoading(false)
-            toast.error(ctx.error.message)
-          },
-        },
-      )
-    } catch (error) {
-      setGoogleLoading(false)
-      if (!handledError) {
-        const message =
-          error instanceof Error
-            ? error.message
-            : "Unable to sign in with Google."
-        toast.error(message)
-      }
-    }
-  }
+  // Google sign-in temporarily disabled until the provider is ready.
+  // const signInWithGoogle = async () => {
+  //   if (googleLoading) {
+  //     return
+  //   }
+  //
+  //   let handledError = false
+  //   try {
+  //     await authClient.signIn.social(
+  //       { provider: "google" },
+  //       {
+  //         onRequest: () => {
+  //           setGoogleLoading(true)
+  //         },
+  //         onSuccess: () => {
+  //           setGoogleLoading(false)
+  //         },
+  //         onError: (ctx) => {
+  //           handledError = true
+  //           setGoogleLoading(false)
+  //           toast.error(ctx.error.message)
+  //         },
+  //       },
+  //     )
+  //   } catch (error) {
+  //     setGoogleLoading(false)
+  //     if (!handledError) {
+  //       const message =
+  //         error instanceof Error
+  //           ? error.message
+  //           : "Unable to sign in with Google."
+  //       toast.error(message)
+  //     }
+  //   }
+  // }
 
   if (isLoading) {
     return <SessionFallback />
@@ -290,7 +291,7 @@ export default function SignIn() {
               Auth
             </CardTitle>
             <CardDescription className="text-lg text-muted-foreground">
-              Sign in with your email using a one-time code, your password, or Google.
+              Sign in with your email using a one-time code or your password.
             </CardDescription>
           </CardHeader>
 
@@ -300,10 +301,11 @@ export default function SignIn() {
               onValueChange={(value) => setMethod(value as SignInMethod)}
               className="space-y-6"
             >
-              <TabsList className="grid grid-cols-3 gap-2">
+              <TabsList className="grid grid-cols-2 gap-2">
                 <TabsTrigger value="otp">Email code</TabsTrigger>
                 <TabsTrigger value="password">Password</TabsTrigger>
-                <TabsTrigger value="google">Google</TabsTrigger>
+                {/* Google sign-in temporarily disabled */}
+                {/* <TabsTrigger value="google">Google</TabsTrigger> */}
               </TabsList>
 
               <TabsContent value="otp" className="space-y-6">
@@ -506,7 +508,7 @@ export default function SignIn() {
                 </Form>
               </TabsContent>
 
-              <TabsContent value="google" className="space-y-6">
+              {/* <TabsContent value="google" className="space-y-6">
                 <div className="space-y-3">
                   <Button
                     type="button"
@@ -526,7 +528,7 @@ export default function SignIn() {
                     We&apos;ll redirect you to Google to finish signing in.
                   </p>
                 </div>
-              </TabsContent>
+              </TabsContent> */}
             </Tabs>
           </CardContent>
 
