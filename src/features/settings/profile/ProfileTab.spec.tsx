@@ -25,9 +25,9 @@ let mutationCallCount = 0
 vi.mock("convex/react", () => ({
   useMutation: vi.fn(() => {
     const mocks = [
-      updateUsernameMock,
       requestEmailChangeMock,
       updateProfileImageMock,
+      updateUsernameMock,
     ]
     const mock = mocks[mutationCallCount % mocks.length] ?? vi.fn()
     mutationCallCount += 1

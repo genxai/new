@@ -33,10 +33,7 @@ import {
   profileImageUpdateSchema,
 } from "../../../../shared/settings_profile"
 import { profileImageSchema } from "../../../../shared/auth-schemas"
-import {
-  usernameDisplaySchema,
-  USERNAME_TAKEN_ERROR,
-} from "../../../../shared/identity"
+import UsernameForm from "./UsernameForm"
 
 export type ProfileTabProps = {
   currentUser:
@@ -56,11 +53,6 @@ export type ProfileTabProps = {
     | undefined
 }
 
-type UsernameFormValues = z.infer<typeof usernameFormSchema>
-const usernameFormSchema = z.object({
-  username: usernameDisplaySchema,
-})
-
 type EmailFormValues = z.infer<typeof emailUpdateSchema>
 
 const profileImageFormSchema = z.object({
@@ -72,21 +64,12 @@ type ProfileImageFormValues = z.infer<typeof profileImageFormSchema>
 type UsernameIdentity = NonNullable<ProfileTabProps["identity"]>
 
 export default function ProfileTab({ currentUser, identity }: ProfileTabProps) {
-  const updateUsername = useMutation(api.identity.updateUsername)
   const requestEmailChange = useMutation(api.identity.requestEmailChange)
   const updateProfileImage = useMutation(api.identity.updateProfileImage)
 
-  const initialUsername = identity?.usernameDisplay ?? ""
   const initialEmail = currentUser?.email ?? ""
   const source = identity?.usernameDisplay ?? currentUser?.email ?? "?"
   const inferredInitials = source.slice(0, 1).toUpperCase()
-
-  const usernameForm = useForm<UsernameFormValues>({
-    resolver: zodResolver(usernameFormSchema),
-    defaultValues: { username: initialUsername },
-    mode: "onSubmit",
-    reValidateMode: "onSubmit",
-  })
 
   const emailForm = useForm<EmailFormValues>({
     resolver: zodResolver(emailUpdateSchema),
@@ -111,10 +94,6 @@ export default function ProfileTab({ currentUser, identity }: ProfileTabProps) {
   const [pendingEmail, setPendingEmail] = useState<string | null>(null)
 
   useEffect(() => {
-    usernameForm.reset({ username: identity?.usernameDisplay ?? "" })
-  }, [identity?.usernameDisplay, usernameForm])
-
-  useEffect(() => {
     emailForm.reset({ email: currentUser?.email ?? "" })
   }, [currentUser?.email, emailForm])
 
@@ -124,27 +103,6 @@ export default function ProfileTab({ currentUser, identity }: ProfileTabProps) {
     setSelectedFile(null)
     imageForm.reset({ image: undefined })
   }, [currentUser?.image, imageForm])
-
-  const onSubmitUsername = usernameForm.handleSubmit(async (values) => {
-    if (values.username === initialUsername) {
-      toast.info("You're already using this username.")
-      return
-    }
-    try {
-      await updateUsername({ display: values.username })
-      toast.success("Username updated.")
-    } catch (error) {
-      const message = error instanceof Error ? error.message : undefined
-      if (message === USERNAME_TAKEN_ERROR) {
-        usernameForm.setError("username", {
-          type: "server",
-          message,
-        })
-        return
-      }
-      toast.error("Could not update username. Try again.")
-    }
-  })
 
   const onSubmitEmail = emailForm.handleSubmit((values) => {
     if (values.email === initialEmail) {
@@ -252,42 +210,7 @@ export default function ProfileTab({ currentUser, identity }: ProfileTabProps) {
           </div>
           <Separator />
 
-          <Form {...usernameForm}>
-            <form
-              data-testid="username-form"
-              className="space-y-4"
-              onSubmit={onSubmitUsername}
-              noValidate
-            >
-              <FormField
-                control={usernameForm.control}
-                name="username"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Username</FormLabel>
-                    <FormControl>
-                      <Input
-                        {...field}
-                        autoCapitalize="none"
-                        autoComplete="off"
-                        aria-describedby="username-helper"
-                      />
-                    </FormControl>
-                    <FormDescription id="username-helper">
-                      Letters and digits only.
-                    </FormDescription>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <Button
-                type="submit"
-                disabled={usernameForm.formState.isSubmitting}
-              >
-                Save username
-              </Button>
-            </form>
-          </Form>
+          <UsernameForm initialUsername={identity?.usernameDisplay ?? ""} />
 
           <Separator />
 

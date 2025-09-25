@@ -5,7 +5,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest"
 import { MemoryRouter } from "react-router-dom"
 
 import Workspace from "./Workspace"
-import { useQuery } from "convex/react"
+import { useQuery, useMutation } from "convex/react"
 import { api } from "../../convex/_generated/api"
 
 const navigateMock = vi.fn()
@@ -28,6 +28,7 @@ vi.mock("@/lib/auth-client", () => ({
 
 vi.mock("convex/react", () => ({
   useQuery: vi.fn(),
+  useMutation: vi.fn(() => vi.fn()),
 }))
 
 type MockUser = {
@@ -88,6 +89,12 @@ describe("Workspace", () => {
       screen.getByRole("img", { name: "person@gen.new" }),
     ).toBeInTheDocument()
     expect(screen.queryByText("Delete account")).not.toBeInTheDocument()
+    expect(
+      screen.getByRole("heading", { name: /username/i }),
+    ).toBeInTheDocument()
+    expect(
+      screen.getByText(/your current username is person/i),
+    ).toBeInTheDocument()
     expect(
       screen.getByRole("heading", { name: /usage limits/i }),
     ).toBeInTheDocument()

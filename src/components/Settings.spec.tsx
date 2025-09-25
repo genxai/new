@@ -76,6 +76,10 @@ describe("Settings", () => {
     })
 
     expect(backButton).toBeInTheDocument()
+    expect(screen.getByRole("heading", { name: /username/i })).toBeInTheDocument()
+    expect(
+      screen.getByText(/your current username is person/i),
+    ).toBeInTheDocument()
     expect(
       screen.getByRole("heading", { name: /usage limits/i }),
     ).toBeInTheDocument()

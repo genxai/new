@@ -12,6 +12,7 @@ import SecurityTab from "@/features/settings/security/SecurityTab"
 import PrivacyTab from "@/features/settings/privacy/PrivacyTab"
 import { api } from "@/convex/api"
 import UsageLimitsSection from "@/components/UsageLimitsSection"
+import UsernameSettingsSection from "@/components/UsernameSettingsSection"
 
 const SETTINGS_TABS = [
   { value: "profile", label: "Profile" },
@@ -48,6 +49,15 @@ export default function Settings() {
           </Button>
         </CardHeader>
         <CardContent className="p-6 pt-0 space-y-6">
+          {identity === undefined ? (
+            <div className="space-y-3">
+              <Skeleton className="h-7 w-32" />
+              <Skeleton className="h-10 w-full" />
+              <Skeleton className="h-10 w-1/2" />
+            </div>
+          ) : (
+            <UsernameSettingsSection username={identity?.usernameDisplay ?? null} />
+          )}
           <UsageLimitsSection usage={usage ?? null} isLoading={isUsageLoading} />
           <Tabs defaultValue="profile" className="w-full">
             <TabsList className="w-full sm:w-auto justify-start">

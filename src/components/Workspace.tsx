@@ -14,6 +14,7 @@ import { Home, LogOut } from "lucide-react"
 import { api } from "../../convex/_generated/api"
 import { authClient } from "@/lib/auth-client"
 import UsageLimitsSection from "@/components/UsageLimitsSection"
+import UsernameSettingsSection from "@/components/UsernameSettingsSection"
 
 export default function Workspace() {
   const user = useQuery(api.auth.getCurrentUser)
@@ -108,6 +109,13 @@ export default function Workspace() {
               usage={usage ?? null}
               isLoading={usage === undefined}
             />
+          </CardContent>
+        </Card>
+      </section>
+      <section>
+        <Card className="border shadow-sm">
+          <CardContent className="p-6">
+            <UsernameSettingsSection username={me?.usernameDisplay ?? null} />
           </CardContent>
         </Card>
       </section>

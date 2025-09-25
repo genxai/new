@@ -92,6 +92,20 @@ const getActiveUsernameHold = async (
   return hold
 }
 
+const releaseUsernameHold = async (
+  ctx: MutationCtx,
+  usernameLower: string,
+  subject: string,
+) => {
+  const now = Date.now()
+  const hold = await getActiveUsernameHold(ctx, usernameLower, now)
+  if (hold && hold.identitySubject === subject) {
+    await ctx.db.delete(hold._id)
+    return true
+  }
+  return false
+}
+
 const throwIfUsernameOnHold = async (
   ctx: MutationCtx,
   usernameLower: string,
@@ -402,7 +416,22 @@ export const updateUsername = mutation({
     const subject = await requireIdentitySubject(ctx)
     const normalized = normalizeUsername(display)
     const now = Date.now()
-    await throwIfUsernameOnHold(ctx, normalized.lower, now)
+    try {
+      await throwIfUsernameOnHold(ctx, normalized.lower, now)
+    } catch (error) {
+      if (error instanceof Error && error.message === USERNAME_TAKEN_ERROR) {
+        const released = await releaseUsernameHold(
+          ctx,
+          normalized.lower,
+          subject,
+        )
+        if (!released) {
+          throw error
+        }
+      } else {
+        throw error
+      }
+    }
 
     const existingUser = await getUserByIdentity(ctx, subject)
     if (
