@@ -15,13 +15,27 @@ import SignIn from "@/SignIn"
 import { ThemeProvider } from "@/providers/theme-provider"
 
 const useConvexAuthMock = vi.fn()
+const useQueryMock = vi.fn()
 const sendVerificationOtpMock = vi.fn()
 const signInEmailOtpMock = vi.fn()
 const signInEmailPasswordMock = vi.fn()
+const signInSocialMock = vi.fn()
 const { toastSuccessMock, toastErrorMock } = vi.hoisted(() => ({
   toastSuccessMock: vi.fn(),
   toastErrorMock: vi.fn(),
 }))
+
+const defaultPublicConfig = {
+  githubOAuth: false,
+  githubErrors: [],
+  googleOAuth: true,
+  googleErrors: [],
+  appleOAuth: false,
+  appleErrors: [],
+  mailPreview: true,
+  mailErrors: [],
+  brand: {},
+} as const
 
 vi.mock("convex/react", async () => {
   const actual =
@@ -29,6 +43,8 @@ vi.mock("convex/react", async () => {
   return {
     ...actual,
     useConvexAuth: () => useConvexAuthMock(),
+    useQuery: (reference: unknown, args?: unknown) =>
+      useQueryMock(reference, args),
   }
 })
 
@@ -39,6 +55,8 @@ vi.mock("@/lib/auth-client", () => ({
         signInEmailOtpMock(args, options),
       email: (args: unknown, options?: any) =>
         signInEmailPasswordMock(args, options),
+      social: (args: unknown, options?: any) =>
+        signInSocialMock(args, options),
     },
     emailOtp: {
       sendVerificationOtp: (args: unknown, options?: any) =>
@@ -90,13 +108,17 @@ beforeEach(() => {
   sendVerificationOtpMock.mockReset()
   signInEmailOtpMock.mockReset()
   signInEmailPasswordMock.mockReset()
+  signInSocialMock.mockReset()
   toastSuccessMock.mockReset()
   toastErrorMock.mockReset()
+  useQueryMock.mockReset()
 
   useConvexAuthMock.mockReturnValue({
     isAuthenticated: false,
     isLoading: false,
   })
+
+  useQueryMock.mockReturnValue(defaultPublicConfig)
 
   sendVerificationOtpMock.mockImplementation(
     async (_args: unknown, options) => {
@@ -111,6 +133,13 @@ beforeEach(() => {
   })
 
   signInEmailPasswordMock.mockImplementation(
+    async (_args: unknown, options) => {
+      options?.onRequest?.()
+      options?.onSuccess?.()
+    },
+  )
+
+  signInSocialMock.mockImplementation(
     async (_args: unknown, options) => {
       options?.onRequest?.()
       options?.onSuccess?.()
@@ -211,10 +240,40 @@ describe("SignIn", () => {
     ).toBeInTheDocument()
   })
 
-  it("does not render Google sign in when disabled", () => {
+  it("disables Google sign in when provider is off", () => {
+    useQueryMock.mockReturnValue({
+      ...defaultPublicConfig,
+      googleOAuth: false,
+    })
+
     renderWithProviders(<SignIn />)
 
-    expect(screen.queryByRole("tab", { name: /google/i })).not.toBeInTheDocument()
+    const googleTab = screen.getByRole("tab", { name: /google/i })
+    expect(googleTab).toHaveAttribute("aria-disabled", "true")
+    const googleButton = screen.getByRole("button", {
+      name: /continue with google/i,
+    })
+    expect(googleButton).toBeDisabled()
+  })
+
+  it("allows signing in with Google when enabled", async () => {
+    renderWithProviders(<SignIn />)
+
+    const googleTab = await screen.findByRole("tab", { name: /google/i })
+    fireEvent.click(googleTab)
+
+    const googleButton = await screen.findByRole("button", {
+      name: /continue with google/i,
+    })
+    expect(googleButton).toBeEnabled()
+    fireEvent.click(googleButton)
+
+    await waitFor(() => {
+      expect(signInSocialMock).toHaveBeenCalledWith(
+        { provider: "google" },
+        expect.objectContaining({ onRequest: expect.any(Function) }),
+      )
+    })
   })
 
   it("verifies the code after it has been sent", async () => {

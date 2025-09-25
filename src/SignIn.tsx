@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react"
 import { Link, useNavigate } from "react-router-dom"
-import { useConvexAuth } from "convex/react"
+import { useConvexAuth, useQuery } from "convex/react"
 import { Home, Loader2 } from "lucide-react"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
@@ -36,9 +36,10 @@ import {
 import { pickIdentityPreviewSample } from "../shared/identity"
 import { PublicPageShell } from "@/components/PublicPageShell"
 import { resolveVerificationSuccessUrl } from "@/lib/verification"
+import { api } from "../convex/_generated/api"
 
 const COOLDOWN_SECONDS = 30
-type SignInMethod = "otp" | "password" // Re-add "google" when provider is ready
+type SignInMethod = "otp" | "password" | "google"
 
 export default function SignIn() {
   const { isAuthenticated, isLoading } = useConvexAuth()
@@ -67,12 +68,26 @@ export default function SignIn() {
     reValidateMode: "onSubmit",
   })
   const [passwordLoading, setPasswordLoading] = useState(false)
-  // const [googleLoading, setGoogleLoading] = useState(false)
+  const [googleLoading, setGoogleLoading] = useState(false)
   const navigate = useNavigate()
   const verificationSuccessUrl = resolveVerificationSuccessUrl()
   const emailValue = form.watch("email")
   const passwordEmailValue = passwordForm.watch("email")
   const passwordValue = passwordForm.watch("password")
+  const config = useQuery(api.config.publicConfig)
+
+  const googleErrors = config?.googleErrors ?? []
+  const googleProviderEnabled = Boolean(config?.googleOAuth)
+  const googleProviderReady = Boolean(
+    googleProviderEnabled && googleErrors.length === 0,
+  )
+  const googleTabDisabled = !googleProviderReady
+
+  useEffect(() => {
+    if (!googleProviderReady && method === "google") {
+      setMethod("otp")
+    }
+  }, [googleProviderReady, method])
 
   useEffect(() => {
     if (cooldownRemaining <= 0) {
@@ -229,45 +244,49 @@ export default function SignIn() {
     },
   )
 
-  // Google sign-in temporarily disabled until the provider is ready.
-  // const signInWithGoogle = async () => {
-  //   if (googleLoading) {
-  //     return
-  //   }
-  //
-  //   let handledError = false
-  //   try {
-  //     await authClient.signIn.social(
-  //       { provider: "google" },
-  //       {
-  //         onRequest: () => {
-  //           setGoogleLoading(true)
-  //         },
-  //         onSuccess: () => {
-  //           setGoogleLoading(false)
-  //         },
-  //         onError: (ctx) => {
-  //           handledError = true
-  //           setGoogleLoading(false)
-  //           toast.error(ctx.error.message)
-  //         },
-  //       },
-  //     )
-  //   } catch (error) {
-  //     setGoogleLoading(false)
-  //     if (!handledError) {
-  //       const message =
-  //         error instanceof Error
-  //           ? error.message
-  //           : "Unable to sign in with Google."
-  //       toast.error(message)
-  //     }
-  //   }
-  // }
+  const signInWithGoogle = async () => {
+    if (googleLoading || !googleProviderReady) {
+      return
+    }
+
+    let handledError = false
+    try {
+      await authClient.signIn.social(
+        { provider: "google" },
+        {
+          onRequest: () => {
+            setGoogleLoading(true)
+          },
+          onSuccess: () => {
+            setGoogleLoading(false)
+          },
+          onError: (ctx) => {
+            handledError = true
+            setGoogleLoading(false)
+            toast.error(ctx.error.message)
+          },
+        },
+      )
+    } catch (error) {
+      setGoogleLoading(false)
+      if (!handledError) {
+        const message =
+          error instanceof Error
+            ? error.message
+            : "Unable to sign in with Google."
+        toast.error(message)
+      }
+    }
+  }
 
   if (isLoading) {
     return <SessionFallback />
   }
+
+  const signInDescription = googleProviderReady
+    ? "Sign in with Google or use your email with a one-time code or your password."
+    : "Sign in with your email using a one-time code or your password."
+  const tabColumnsClass = "grid-cols-3"
 
   return (
     <PublicPageShell
@@ -291,7 +310,7 @@ export default function SignIn() {
               Auth
             </CardTitle>
             <CardDescription className="text-lg text-muted-foreground">
-              Sign in with your email using a one-time code or your password.
+              {signInDescription}
             </CardDescription>
           </CardHeader>
 
@@ -301,11 +320,12 @@ export default function SignIn() {
               onValueChange={(value) => setMethod(value as SignInMethod)}
               className="space-y-6"
             >
-              <TabsList className="grid grid-cols-2 gap-2">
+              <TabsList className={`grid ${tabColumnsClass} gap-2`}>
                 <TabsTrigger value="otp">Email code</TabsTrigger>
                 <TabsTrigger value="password">Password</TabsTrigger>
-                {/* Google sign-in temporarily disabled */}
-                {/* <TabsTrigger value="google">Google</TabsTrigger> */}
+                <TabsTrigger value="google" disabled={googleTabDisabled}>
+                  Google
+                </TabsTrigger>
               </TabsList>
 
               <TabsContent value="otp" className="space-y-6">
@@ -498,9 +518,9 @@ export default function SignIn() {
                           type="button"
                           variant="link"
                           className="px-1"
-                          asChild
+                          render={<Link to="/sign-up" />}
                         >
-                          <Link to="/sign-up">Create one</Link>
+                          Create one
                         </Button>
                       </p>
                     </div>
@@ -508,27 +528,43 @@ export default function SignIn() {
                 </Form>
               </TabsContent>
 
-              {/* <TabsContent value="google" className="space-y-6">
+              <TabsContent value="google" className="space-y-6">
                 <div className="space-y-3">
                   <Button
                     type="button"
                     className="w-full"
                     variant="outline"
-                    disabled={googleLoading}
+                    disabled={googleTabDisabled || googleLoading}
                     onClick={() => {
                       void signInWithGoogle()
                     }}
                   >
                     {googleLoading ? (
-                      <Loader2 className="mr-2 size-4 animate-spin" aria-hidden />
+                      <Loader2
+                        className="mr-2 size-4 animate-spin"
+                        aria-hidden
+                      />
                     ) : null}
                     Continue with Google
                   </Button>
-                  <p className="text-center text-sm text-muted-foreground">
-                    We&apos;ll redirect you to Google to finish signing in.
-                  </p>
+                  {googleTabDisabled ? (
+                    <p className="text-center text-sm text-muted-foreground">
+                      {googleProviderEnabled
+                        ? "Google sign-in is configuring. Refresh once setup completes."
+                        : "Enable Google OAuth in your admin settings to use this option."}
+                      {googleErrors.length > 0 ? (
+                        <span className="block pt-1 text-xs text-destructive">
+                          {googleErrors[0]}
+                        </span>
+                      ) : null}
+                    </p>
+                  ) : (
+                    <p className="text-center text-sm text-muted-foreground">
+                      We&apos;ll redirect you to Google to finish signing in.
+                    </p>
+                  )}
                 </div>
-              </TabsContent> */}
+              </TabsContent>
             </Tabs>
           </CardContent>
 
@@ -548,8 +584,13 @@ export default function SignIn() {
 
             <p className="text-center text-sm text-muted-foreground">
               Don&apos;t have an account?{" "}
-              <Button type="button" variant="link" className="px-0" asChild>
-                <Link to="/sign-up">Create one</Link>
+              <Button
+                type="button"
+                variant="link"
+                className="px-0"
+                render={<Link to="/sign-up" />}
+              >
+                Create one
               </Button>
             </p>
           </CardFooter> */}
