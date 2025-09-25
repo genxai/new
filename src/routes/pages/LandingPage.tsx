@@ -1,7 +1,8 @@
-import { useEffect, useMemo, useState } from "react"
+import { useEffect, useMemo, useState, type ReactNode } from "react"
 import { useNavigate, Link } from "react-router-dom"
 import { useAction, useConvexAuth, useQuery } from "convex/react"
 import { Github, Image as ImageIcon, Sparkles, UserRound } from "lucide-react"
+import { Streamdown } from "streamdown"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { toast } from "@/lib/toast"
@@ -517,24 +518,32 @@ function ChatBubble({ message }: { message: ChatMessage }) {
     )
   }
 
+  const containerClass = `flex ${isUser ? "justify-end" : "justify-start"}`
+  const bubbleClass = `max-w-[80%] rounded-2xl px-4 py-3 text-sm leading-relaxed ${isUser ? "bg-primary text-primary-foreground" : "bg-muted text-foreground"}`
+  const bubbleProps =
+    message.role === "assistant" && message.type === "text"
+      ? ({ "aria-live": message.status === "completed" ? "off" : "polite" } as const)
+      : undefined
+
+  let content: ReactNode
+  if (message.role === "assistant" && message.type === "text") {
+    if (message.status === "pending" && !message.content) {
+      content = "…"
+    } else {
+      content = (
+        <Streamdown className="leading-relaxed [&_*]:break-words [&_pre]:overflow-x-auto [&_pre]:rounded-lg [&_pre]:bg-background/80 [&_code]:rounded [&_code]:bg-background/60 [&_code]:px-1 [&_code]:py-0.5">
+          {message.content}
+        </Streamdown>
+      )
+    }
+  } else {
+    content = <p className="whitespace-pre-wrap">{message.content}</p>
+  }
+
   return (
-    <div className={`flex ${isUser ? "justify-end" : "justify-start"}`}>
-      <div
-        className={`max-w-[80%] rounded-2xl px-4 py-3 text-sm leading-relaxed ${
-          isUser
-            ? "bg-primary text-primary-foreground"
-            : "bg-muted text-foreground"
-        }`}
-      >
-        {message.role === "assistant" && message.status === "pending" ? (
-          "…"
-        ) : message.role === "assistant" && message.type === "text" ? (
-          <p className="whitespace-pre-wrap">{message.content}</p>
-        ) : message.role === "user" ? (
-          <p className="whitespace-pre-wrap">{message.content}</p>
-        ) : (
-          ""
-        )}
+    <div className={containerClass}>
+      <div className={bubbleClass} {...bubbleProps}>
+        {content}
       </div>
     </div>
   )
