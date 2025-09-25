@@ -21,13 +21,9 @@ export default function PendingVerificationPage() {
             >
               <p className="text-sm text-foreground">
                 We&apos;ve sent you a verification email. Once it&apos;s
-                confirmed we will activate your workspace access.
+                confirmed you will have full access to account.
               </p>
             </div>
-            <p className="text-sm">
-              We saved your details for 24 hours. Finish verification from the
-              email at any time during that window to keep your username.
-            </p>
             <p className="text-sm">
               Didn&apos;t get the email? Check your spam folder or request a new
               link from the sign in screen.
