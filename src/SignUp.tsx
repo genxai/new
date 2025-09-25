@@ -107,10 +107,13 @@ export default function SignUp() {
     }
 
     const verificationSuccessUrl = resolveVerificationSuccessUrl()
+    const normalizedEmail = values.email.trim()
+
     const { data, error } = await authClient.signUp.email(
       {
-        email: values.email,
+        email: normalizedEmail,
         password: values.password,
+        name: normalizedEmail,
         callbackURL: verificationSuccessUrl,
       },
       {

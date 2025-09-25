@@ -339,6 +339,7 @@ describe("SignUp", () => {
         expect.objectContaining({
           email: "ada@gen.new",
           password: "library-quiet-yellow-planet-92",
+          name: "ada@gen.new",
         }),
         expect.any(Object),
       )
