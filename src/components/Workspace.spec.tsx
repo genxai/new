@@ -101,11 +101,11 @@ describe("Workspace", () => {
     expect(
       screen.getByText(/text messages/i, { selector: "dt" }),
     ).toBeInTheDocument()
-    expect(screen.getByText(/you've used 2 of 3 text messages/i)).toBeInTheDocument()
-    expect(screen.getByText(/2 \/ 3 used/i)).toBeInTheDocument()
-    expect(screen.getByText(/1 \/ 3 used/i)).toBeInTheDocument()
-    expect(screen.getByText(/1 left today/i)).toBeInTheDocument()
-    expect(screen.getByText(/2 left today/i)).toBeInTheDocument()
+    expect(screen.getByText(/you've used 2 of 10 text messages/i)).toBeInTheDocument()
+    expect(screen.getByText(/2 \/ 10 used/i)).toBeInTheDocument()
+    expect(screen.getByText(/1 \/ 10 used/i)).toBeInTheDocument()
+    expect(screen.getByText(/8 left today/i)).toBeInTheDocument()
+    expect(screen.getByText(/9 left today/i)).toBeInTheDocument()
     expect(screen.getByText(/limits reset every day/i)).toBeInTheDocument()
   })
 })
