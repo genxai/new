@@ -101,12 +101,14 @@ function TabIndicator({
 
 function TabsContent({
   className,
+  keepMounted = true,
   ...props
 }: React.ComponentProps<typeof BaseTabs.Panel>) {
   return (
     <BaseTabs.Panel
       data-slot="tabs-content"
       className={cn("flex-1 outline-none", className)}
+      keepMounted={keepMounted}
       {...props}
     />
   )

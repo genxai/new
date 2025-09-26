@@ -252,6 +252,7 @@ describe("SignIn", () => {
     expect(googleTab).toHaveAttribute("aria-disabled", "true")
     const googleButton = screen.getByRole("button", {
       name: /continue with google/i,
+      hidden: true,
     })
     expect(googleButton).toBeDisabled()
   })

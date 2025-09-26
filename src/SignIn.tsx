@@ -75,13 +75,35 @@ export default function SignIn() {
   const passwordEmailValue = passwordForm.watch("email")
   const passwordValue = passwordForm.watch("password")
   const config = useQuery(api.config.publicConfig)
+  const configLoading = config === undefined
 
   const googleErrors = config?.googleErrors ?? []
   const googleProviderEnabled = Boolean(config?.googleOAuth)
   const googleProviderReady = Boolean(
     googleProviderEnabled && googleErrors.length === 0,
   )
-  const googleTabDisabled = !googleProviderReady
+  const googleTabDisabled = !googleProviderReady && !configLoading
+  const googleButtonDisabled = !googleProviderReady || googleLoading
+
+  const googleStatus = configLoading
+    ? {
+        message: "Checking Google sign-in configuration...",
+        error: undefined,
+      }
+    : !googleProviderEnabled
+      ? {
+          message: "Enable Google OAuth in your admin settings to use this option.",
+          error: googleErrors[0],
+        }
+      : googleErrors.length > 0
+        ? {
+            message: "Google sign-in is configuring. Refresh once setup completes.",
+            error: googleErrors[0],
+          }
+        : {
+            message: "We'll redirect you to Google to finish signing in.",
+            error: undefined,
+          }
 
   useEffect(() => {
     if (!googleProviderReady && method === "google") {
@@ -534,7 +556,7 @@ export default function SignIn() {
                     type="button"
                     className="w-full"
                     variant="outline"
-                    disabled={googleTabDisabled || googleLoading}
+                    disabled={googleButtonDisabled}
                     onClick={() => {
                       void signInWithGoogle()
                     }}
@@ -547,22 +569,14 @@ export default function SignIn() {
                     ) : null}
                     Continue with Google
                   </Button>
-                  {googleTabDisabled ? (
-                    <p className="text-center text-sm text-muted-foreground">
-                      {googleProviderEnabled
-                        ? "Google sign-in is configuring. Refresh once setup completes."
-                        : "Enable Google OAuth in your admin settings to use this option."}
-                      {googleErrors.length > 0 ? (
-                        <span className="block pt-1 text-xs text-destructive">
-                          {googleErrors[0]}
-                        </span>
-                      ) : null}
-                    </p>
-                  ) : (
-                    <p className="text-center text-sm text-muted-foreground">
-                      We&apos;ll redirect you to Google to finish signing in.
-                    </p>
-                  )}
+                  <p className="text-center text-sm text-muted-foreground">
+                    {googleStatus.message}
+                    {googleStatus.error ? (
+                      <span className="block pt-1 text-xs text-destructive">
+                        {googleStatus.error}
+                      </span>
+                    ) : null}
+                  </p>
                 </div>
               </TabsContent>
             </Tabs>
