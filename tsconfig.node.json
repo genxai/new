@@ -10,12 +10,17 @@
     "resolveJsonModule": true,
     "isolatedModules": true,
     "verbatimModuleSyntax": true,
-    "types": ["node"]
+    "types": ["node"],
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["./src/*"]
+    }
   },
   "include": [
     "vite.config.ts",
     "scripts/**/*.ts",
     "scripts/**/*.mts",
-    "scripts/**/*.cts"
+    "scripts/**/*.cts",
+    "src"
   ]
 }

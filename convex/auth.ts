@@ -9,7 +9,7 @@ import {
   type BetterAuthPlugin,
 } from "better-auth"
 import { createAuthMiddleware } from "better-auth/api"
-import { emailOTP, haveIBeenPwned, magicLink } from "better-auth/plugins"
+import { admin, emailOTP, haveIBeenPwned, magicLink } from "better-auth/plugins"
 import { DataModel } from "./_generated/dataModel"
 import {
   sendEmailVerification,
@@ -654,6 +654,7 @@ export const createAuth = (
           })
         },
       }),
+      admin(),
       haveIBeenPwned({
         customPasswordCompromisedMessage: COMPROMISED_PASSPHRASE_MESSAGE,
       }),
