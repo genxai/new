@@ -1,4 +1,5 @@
 import { createClient, type GenericCtx } from "@convex-dev/better-auth"
+import authSchema from "./betterAuth/schema"
 import { convex, crossDomain } from "@convex-dev/better-auth/plugins"
 import { components, internal } from "./_generated/api"
 import { query } from "./_generated/server"
@@ -9,7 +10,7 @@ import {
   type BetterAuthPlugin,
 } from "better-auth"
 import { createAuthMiddleware } from "better-auth/api"
-import { admin, emailOTP, haveIBeenPwned, magicLink } from "better-auth/plugins"
+import { emailOTP, haveIBeenPwned, magicLink } from "better-auth/plugins"
 import { DataModel } from "./_generated/dataModel"
 import {
   sendEmailVerification,
@@ -152,7 +153,14 @@ if (appleConfig.enabled) {
   trustedOrigins.add(normalizeOrigin("https://appleid.apple.com"))
 }
 
-export const authComponent = createClient<DataModel>(components.betterAuth)
+export const authComponent = createClient<DataModel, typeof authSchema>(
+  components.betterAuth,
+  {
+    local: {
+      schema: authSchema,
+    },
+  },
+)
 
 let identityCleanupCronsEnsured = false
 let identityCleanupCronsEnsuring: Promise<void> | null = null
@@ -654,7 +662,6 @@ export const createAuth = (
           })
         },
       }),
-      admin(),
       haveIBeenPwned({
         customPasswordCompromisedMessage: COMPROMISED_PASSPHRASE_MESSAGE,
       }),

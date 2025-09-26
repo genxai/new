@@ -3,11 +3,7 @@ import {
   convexClient,
   crossDomainClient,
 } from "@convex-dev/better-auth/client/plugins"
-import {
-  magicLinkClient,
-  emailOTPClient,
-  adminClient,
-} from "better-auth/client/plugins"
+import { magicLinkClient, emailOTPClient } from "better-auth/client/plugins"
 
 import { handleRateLimitResponse } from "./auth-client-rate-limit"
 
@@ -34,7 +30,6 @@ export const authClient = createAuthClient({
   plugins: [
     magicLinkClient(),
     emailOTPClient(),
-    adminClient(),
     crossDomainClient(),
     convexClient(),
   ],
