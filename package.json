@@ -17,7 +17,7 @@
     "build": "vite build",
     "check": "node scripts/guardrails.cjs && node scripts/consistency-check.mjs --report && tsc -p . --noEmit && eslint . --max-warnings=0 && prettier -c . && vitest run --reporter=verbose",
     "audit": "node scripts/guardrails.cjs && node scripts/consistency-check.mjs --report && npx secretlint \"**/*\" && node scripts/run-gitleaks.mjs detect --no-banner --redact --no-git -v && npm audit --audit-level=moderate --production",
-    "s": "bun --watch scripts/run.ts"
+    "s": "bun --watch scripts/i-run.ts"
   },
   "dependencies": {
     "@base-ui-components/react": "^1.0.0-beta.3",
