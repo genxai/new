@@ -38,11 +38,15 @@ export type Mounts = {
         input:
           | {
               data: {
+                banExpires?: null | number;
+                banReason?: null | string;
+                banned?: null | boolean;
                 createdAt: number;
                 email: string;
                 emailVerified: boolean;
                 image?: null | string;
                 name: string;
+                role?: null | string;
                 updatedAt: number;
                 userId?: null | string;
               };
@@ -52,6 +56,7 @@ export type Mounts = {
               data: {
                 createdAt: number;
                 expiresAt: number;
+                impersonatedBy?: null | string;
                 ipAddress?: null | string;
                 token: string;
                 updatedAt: number;
@@ -116,6 +121,10 @@ export type Mounts = {
                   | "image"
                   | "createdAt"
                   | "updatedAt"
+                  | "role"
+                  | "banned"
+                  | "banReason"
+                  | "banExpires"
                   | "userId"
                   | "id";
                 operator?:
@@ -150,6 +159,7 @@ export type Mounts = {
                   | "ipAddress"
                   | "userAgent"
                   | "userId"
+                  | "impersonatedBy"
                   | "id";
                 operator?:
                   | "lt"
@@ -293,6 +303,10 @@ export type Mounts = {
                   | "image"
                   | "createdAt"
                   | "updatedAt"
+                  | "role"
+                  | "banned"
+                  | "banReason"
+                  | "banExpires"
                   | "userId"
                   | "id";
                 operator?:
@@ -327,6 +341,7 @@ export type Mounts = {
                   | "ipAddress"
                   | "userAgent"
                   | "userId"
+                  | "impersonatedBy"
                   | "id";
                 operator?:
                   | "lt"
@@ -526,11 +541,15 @@ export type Mounts = {
           | {
               model: "user";
               update: {
+                banExpires?: null | number;
+                banReason?: null | string;
+                banned?: null | boolean;
                 createdAt?: number;
                 email?: string;
                 emailVerified?: boolean;
                 image?: null | string;
                 name?: string;
+                role?: null | string;
                 updatedAt?: number;
                 userId?: null | string;
               };
@@ -543,6 +562,10 @@ export type Mounts = {
                   | "image"
                   | "createdAt"
                   | "updatedAt"
+                  | "role"
+                  | "banned"
+                  | "banReason"
+                  | "banExpires"
                   | "userId"
                   | "id";
                 operator?:
@@ -570,6 +593,7 @@ export type Mounts = {
               update: {
                 createdAt?: number;
                 expiresAt?: number;
+                impersonatedBy?: null | string;
                 ipAddress?: null | string;
                 token?: string;
                 updatedAt?: number;
@@ -586,6 +610,7 @@ export type Mounts = {
                   | "ipAddress"
                   | "userAgent"
                   | "userId"
+                  | "impersonatedBy"
                   | "id";
                 operator?:
                   | "lt"
@@ -747,11 +772,15 @@ export type Mounts = {
           | {
               model: "user";
               update: {
+                banExpires?: null | number;
+                banReason?: null | string;
+                banned?: null | boolean;
                 createdAt?: number;
                 email?: string;
                 emailVerified?: boolean;
                 image?: null | string;
                 name?: string;
+                role?: null | string;
                 updatedAt?: number;
                 userId?: null | string;
               };
@@ -764,6 +793,10 @@ export type Mounts = {
                   | "image"
                   | "createdAt"
                   | "updatedAt"
+                  | "role"
+                  | "banned"
+                  | "banReason"
+                  | "banExpires"
                   | "userId"
                   | "id";
                 operator?:
@@ -791,6 +824,7 @@ export type Mounts = {
               update: {
                 createdAt?: number;
                 expiresAt?: number;
+                impersonatedBy?: null | string;
                 ipAddress?: null | string;
                 token?: string;
                 updatedAt?: number;
@@ -807,6 +841,7 @@ export type Mounts = {
                   | "ipAddress"
                   | "userAgent"
                   | "userId"
+                  | "impersonatedBy"
                   | "id";
                 operator?:
                   | "lt"

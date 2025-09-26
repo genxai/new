@@ -28,6 +28,7 @@ import type * as hash from "../hash.js";
 import type * as http from "../http.js";
 import type * as identity from "../identity.js";
 import type * as images from "../images.js";
+import type * as internal_ from "../internal.js";
 import type * as rateLimitStorage from "../rateLimitStorage.js";
 import type * as settings_privacy from "../settings_privacy.js";
 import type * as settings_security from "../settings_security.js";
@@ -68,6 +69,7 @@ declare const fullApi: ApiFromModules<{
   http: typeof http;
   identity: typeof identity;
   images: typeof images;
+  internal: typeof internal_;
   rateLimitStorage: typeof rateLimitStorage;
   settings_privacy: typeof settings_privacy;
   settings_security: typeof settings_security;
@@ -94,11 +96,15 @@ export declare const components: {
           input:
             | {
                 data: {
+                  banExpires?: null | number;
+                  banReason?: null | string;
+                  banned?: null | boolean;
                   createdAt: number;
                   email: string;
                   emailVerified: boolean;
                   image?: null | string;
                   name: string;
+                  role?: null | string;
                   updatedAt: number;
                   userId?: null | string;
                 };
@@ -108,6 +114,7 @@ export declare const components: {
                 data: {
                   createdAt: number;
                   expiresAt: number;
+                  impersonatedBy?: null | string;
                   ipAddress?: null | string;
                   token: string;
                   updatedAt: number;
@@ -172,6 +179,10 @@ export declare const components: {
                     | "image"
                     | "createdAt"
                     | "updatedAt"
+                    | "role"
+                    | "banned"
+                    | "banReason"
+                    | "banExpires"
                     | "userId"
                     | "id";
                   operator?:
@@ -206,6 +217,7 @@ export declare const components: {
                     | "ipAddress"
                     | "userAgent"
                     | "userId"
+                    | "impersonatedBy"
                     | "id";
                   operator?:
                     | "lt"
@@ -349,6 +361,10 @@ export declare const components: {
                     | "image"
                     | "createdAt"
                     | "updatedAt"
+                    | "role"
+                    | "banned"
+                    | "banReason"
+                    | "banExpires"
                     | "userId"
                     | "id";
                   operator?:
@@ -383,6 +399,7 @@ export declare const components: {
                     | "ipAddress"
                     | "userAgent"
                     | "userId"
+                    | "impersonatedBy"
                     | "id";
                   operator?:
                     | "lt"
@@ -582,11 +599,15 @@ export declare const components: {
             | {
                 model: "user";
                 update: {
+                  banExpires?: null | number;
+                  banReason?: null | string;
+                  banned?: null | boolean;
                   createdAt?: number;
                   email?: string;
                   emailVerified?: boolean;
                   image?: null | string;
                   name?: string;
+                  role?: null | string;
                   updatedAt?: number;
                   userId?: null | string;
                 };
@@ -599,6 +620,10 @@ export declare const components: {
                     | "image"
                     | "createdAt"
                     | "updatedAt"
+                    | "role"
+                    | "banned"
+                    | "banReason"
+                    | "banExpires"
                     | "userId"
                     | "id";
                   operator?:
@@ -626,6 +651,7 @@ export declare const components: {
                 update: {
                   createdAt?: number;
                   expiresAt?: number;
+                  impersonatedBy?: null | string;
                   ipAddress?: null | string;
                   token?: string;
                   updatedAt?: number;
@@ -642,6 +668,7 @@ export declare const components: {
                     | "ipAddress"
                     | "userAgent"
                     | "userId"
+                    | "impersonatedBy"
                     | "id";
                   operator?:
                     | "lt"
@@ -803,11 +830,15 @@ export declare const components: {
             | {
                 model: "user";
                 update: {
+                  banExpires?: null | number;
+                  banReason?: null | string;
+                  banned?: null | boolean;
                   createdAt?: number;
                   email?: string;
                   emailVerified?: boolean;
                   image?: null | string;
                   name?: string;
+                  role?: null | string;
                   updatedAt?: number;
                   userId?: null | string;
                 };
@@ -820,6 +851,10 @@ export declare const components: {
                     | "image"
                     | "createdAt"
                     | "updatedAt"
+                    | "role"
+                    | "banned"
+                    | "banReason"
+                    | "banExpires"
                     | "userId"
                     | "id";
                   operator?:
@@ -847,6 +882,7 @@ export declare const components: {
                 update: {
                   createdAt?: number;
                   expiresAt?: number;
+                  impersonatedBy?: null | string;
                   ipAddress?: null | string;
                   token?: string;
                   updatedAt?: number;
@@ -863,6 +899,7 @@ export declare const components: {
                     | "ipAddress"
                     | "userAgent"
                     | "userId"
+                    | "impersonatedBy"
                     | "id";
                   operator?:
                     | "lt"
