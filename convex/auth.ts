@@ -153,7 +153,9 @@ if (appleConfig.enabled) {
 }
 
 export const authComponent = createClient<DataModel, typeof authSchema>(
-  components.betterAuth,
+  // TODO: turn of biome for workspace, it should not be here
+  // biome-ignore lint: https://discord.com/channels/1019350475847499849/1421145324625465346/1421155682316455987
+  components.betterAuth as any,
   {
     local: {
       schema: authSchema,
