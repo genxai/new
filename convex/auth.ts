@@ -18,7 +18,6 @@ import {
   sendOTPVerification,
   sendResetPassword,
 } from "./email"
-import { requireEnv } from "./util"
 import {
   readAppleConfigFromEnv,
   readGithubConfigFromEnv,
@@ -33,7 +32,7 @@ import {
 import { COMPROMISED_PASSPHRASE_MESSAGE } from "../shared/passphrase-strength"
 import { createConvexRateLimitStorage } from "./rateLimitStorage"
 
-const siteUrl = requireEnv("SITE_URL")
+const siteUrl = process.env.SITE_URL ?? "http://localhost:5173"
 const env = process.env as Record<string, string | undefined>
 const githubConfig = readGithubConfigFromEnv(env)
 const googleConfig = readGoogleConfigFromEnv(env)
