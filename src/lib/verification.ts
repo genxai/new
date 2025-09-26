@@ -1,11 +1,5 @@
-export function resolveVerificationSuccessUrl() {
-  const baseUrl =
-    import.meta.env.VITE_SITE_URL ??
-    (typeof window !== "undefined" ? window.location.origin : "")
+import { resolveAppUrl } from "@/lib/app-url"
 
-  try {
-    return new URL("/auth/verification-success", baseUrl).toString()
-  } catch {
-    return "/auth/verification-success"
-  }
+export function resolveVerificationSuccessUrl() {
+  return resolveAppUrl("/auth/verification-success")
 }

@@ -35,7 +35,7 @@ import {
 } from "../shared/auth-schemas"
 import { pickIdentityPreviewSample } from "../shared/identity"
 import { PublicPageShell } from "@/components/PublicPageShell"
-import { resolveVerificationSuccessUrl } from "@/lib/verification"
+import { resolveAppUrl } from "@/lib/app-url"
 import { api } from "../convex/_generated/api"
 
 const COOLDOWN_SECONDS = 30
@@ -70,7 +70,7 @@ export default function SignIn() {
   const [passwordLoading, setPasswordLoading] = useState(false)
   const [googleLoading, setGoogleLoading] = useState(false)
   const navigate = useNavigate()
-  const verificationSuccessUrl = resolveVerificationSuccessUrl()
+  const postAuthRedirectUrl = resolveAppUrl("/")
   const emailValue = form.watch("email")
   const passwordEmailValue = passwordForm.watch("email")
   const passwordValue = passwordForm.watch("password")
@@ -152,7 +152,7 @@ export default function SignIn() {
         {
           email,
           type: "sign-in",
-          callbackURL: verificationSuccessUrl,
+          callbackURL: postAuthRedirectUrl,
         },
         {
           onRequest: () => {
@@ -202,7 +202,7 @@ export default function SignIn() {
         {
           email: email.trim(),
           otp: trimmedOtp,
-          callbackURL: verificationSuccessUrl,
+          callbackURL: postAuthRedirectUrl,
         },
         {
           onRequest: () => {
@@ -237,7 +237,7 @@ export default function SignIn() {
           {
             email: email.trim(),
             password,
-            callbackURL: verificationSuccessUrl,
+            callbackURL: postAuthRedirectUrl,
           },
           {
             onRequest: () => {
