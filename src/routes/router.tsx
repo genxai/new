@@ -7,6 +7,7 @@ import NotFoundPage from "@/routes/pages/NotFoundPage"
 import TermsPage from "@/routes/pages/TermsPage"
 import PrivacyPage from "@/routes/pages/PrivacyPage"
 import LandingPage from "@/routes/pages/LandingPage"
+import MainPage from "@/routes/pages/MainPage"
 import { Protected } from "@/routes/guards"
 import WorkspaceShell from "@/routes/layouts/WorkspaceShell"
 import RouteErrorBoundary from "@/routes/RouteErrorBoundary"
@@ -14,6 +15,10 @@ import RouteErrorBoundary from "@/routes/RouteErrorBoundary"
 const baseRoutes: RouteObject[] = [
   {
     path: "/",
+    Component: MainPage,
+  },
+  {
+    path: "/landing",
     Component: LandingPage,
   },
   {
@@ -79,16 +84,43 @@ const baseRoutes: RouteObject[] = [
     ],
   },
   {
+    path: "/image",
+    Component: MainPage,
+  },
+  {
+    path: "/video",
+    Component: MainPage,
+  },
+  {
+    path: "/audio",
+    Component: MainPage,
+  },
+  {
+    path: "/writing",
+    Component: MainPage,
+  },
+  {
+    path: "/code",
+    Component: MainPage,
+  },
+  {
     path: "*",
     Component: NotFoundPage,
   },
 ]
 
-const withDefaultErrorElement = (route: RouteObject): RouteObject => ({
-  ...route,
-  errorElement: route.errorElement ?? <RouteErrorBoundary />,
-  children: route.children?.map(withDefaultErrorElement),
-})
+const withDefaultErrorElement = (route: RouteObject): RouteObject => {
+  const result: RouteObject = {
+    ...route,
+    errorElement: route.errorElement ?? <RouteErrorBoundary />,
+  }
+
+  if (route.children) {
+    result.children = route.children.map(withDefaultErrorElement)
+  }
+
+  return result
+}
 
 export const routes = baseRoutes.map(withDefaultErrorElement)
 

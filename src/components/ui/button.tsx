@@ -12,6 +12,7 @@ const buttonVariants = cva(
       variant: {
         default:
           "bg-primary text-primary-foreground hover:bg-primary/80 shadow-xs",
+        icon: "bg-transparent border-foreground/50 border-1 boxShadow-xs rounded-full",
         secondary:
           "bg-secondary text-secondary-foreground hover:bg-secondary/80 shadow-xs",
         ghost:
@@ -23,8 +24,8 @@ const buttonVariants = cva(
           "bg-destructive hover:bg-destructive/80 dark:bg-destructive/80 text-destructive-foreground dark:hover:bg-destructive/60 dark:focus-visible:ring-destructive/40 focus-visible:ring-destructive/50 shadow-xs",
       },
       size: {
-        sm: "h-8 px-3 gap-1",
-        md: "h-9 px-4",
+        sm: "h-6 px-3 gap-1",
+        md: "h-8 px-4",
         lg: "h-10 px-5",
         "icon-sm": "size-8 [&_svg:not([class*='size-'])]:size-3",
         icon: "size-9",

@@ -155,7 +155,8 @@ export default function LandingPage() {
       } else if (usage.imageTotal >= FREE_AUTH_GENERATIONS) {
         toast.info({
           title: "Free limit reached",
-          description: "You've used all free images. The limit resets in 1 day.",
+          description:
+            "You've used all free images. The limit resets in 1 day.",
         })
         return
       }
@@ -182,7 +183,8 @@ export default function LandingPage() {
       } else if (usage.textCount >= limit) {
         toast.info({
           title: "Free limit reached",
-          description: "You've used all free text messages. The limit resets in 1 day.",
+          description:
+            "You've used all free text messages. The limit resets in 1 day.",
         })
         return
       }
@@ -274,7 +276,7 @@ export default function LandingPage() {
               ? {
                   ...message,
                   imageUrls: result.imageUrls,
-                  description: result.description ?? message.description,
+                  // description: result.description ?? message.description,
                   status: "completed",
                 }
               : message,
@@ -522,7 +524,9 @@ function ChatBubble({ message }: { message: ChatMessage }) {
   const bubbleClass = `max-w-[80%] rounded-2xl px-4 py-3 text-sm leading-relaxed ${isUser ? "bg-primary text-primary-foreground" : "bg-muted text-foreground"}`
   const bubbleProps =
     message.role === "assistant" && message.type === "text"
-      ? ({ "aria-live": message.status === "completed" ? "off" : "polite" } as const)
+      ? ({
+          "aria-live": message.status === "completed" ? "off" : "polite",
+        } as const)
       : undefined
 
   let content: ReactNode
