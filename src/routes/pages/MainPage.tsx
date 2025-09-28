@@ -2,56 +2,9 @@ import { useState } from "react"
 import { useLocation, useNavigate } from "react-router-dom"
 import SettingsIcon from "@/components/ui/settings-icon"
 import PlusIcon from "@/components/ui/plus-icon"
-
-import { Image as ImageIcon, Video, Music, FileText, Code } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-
-type Section = {
-  id: string
-  name: string
-  icon: React.ComponentType<{ className?: string }>
-  color: string
-  route: string
-}
-
-const sections: Section[] = [
-  {
-    id: "image",
-    name: "Image",
-    icon: ImageIcon,
-    color: "from-green-500 to-emerald-600",
-    route: "/image",
-  },
-  {
-    id: "video",
-    name: "Video",
-    icon: Video,
-    color: "from-blue-500 to-cyan-600",
-    route: "/video",
-  },
-  {
-    id: "audio",
-    name: "Audio",
-    icon: Music,
-    color: "from-purple-500 to-violet-600",
-    route: "/audio",
-  },
-  {
-    id: "writing",
-    name: "Writing",
-    icon: FileText,
-    color: "from-orange-500 to-red-600",
-    route: "/writing",
-  },
-  {
-    id: "code",
-    name: "Code",
-    icon: Code,
-    color: "from-indigo-500 to-blue-600",
-    route: "/code",
-  },
-]
+import { sections, getColorFromGradient, type Section } from "@/data/sections"
 
 export default function MainPage() {
   const [prompt, setPrompt] = useState("")
@@ -64,10 +17,6 @@ export default function MainPage() {
 
   const handleSectionClick = (section: Section) => {
     navigate(section.route)
-  }
-
-  const handleGenerate = () => {
-    console.log(`Generating ${activeSection.id} with prompt:`, prompt)
   }
 
   return (
@@ -87,7 +36,7 @@ export default function MainPage() {
               new
             </span>
             <span className="text-foreground/80">
-              {activeSection.name.toLowerCase()}
+              {activeSection.genName.toLowerCase()}
             </span>
           </div>
 
@@ -117,7 +66,6 @@ export default function MainPage() {
               </Button>
               <Button
                 size="md"
-                onClick={handleGenerate}
                 className={`text-sm font-medium bg-gradient-to-r ${activeSection.color} hover:opacity-90 px-4 py-1 transition-opacity`}
               >
                 Generate
@@ -137,14 +85,26 @@ export default function MainPage() {
               <button
                 key={section.id}
                 onClick={() => handleSectionClick(section)}
-                className={`flex flex-col items-center gap-1 p-2 rounded-lg transition-colors ${
-                  isActive
-                    ? `text-white bg-gradient-to-r ${section.color}`
-                    : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
-                }`}
+                className="flex flex-col items-center cursor-pointer gap-1 p-2"
               >
-                <Icon className="h-5 w-5" />
-                <span className="text-xs font-medium">{section.name}</span>
+                <Icon
+                  className="h-5 w-5 transition-colors text-muted-foreground/50 hover:text-foreground"
+                  style={
+                    isActive
+                      ? { color: getColorFromGradient(section.color) }
+                      : undefined
+                  }
+                />
+                <span
+                  className="text-xs font-medium"
+                  style={
+                    isActive
+                      ? { color: getColorFromGradient(section.color) }
+                      : undefined
+                  }
+                >
+                  {section.navName}
+                </span>
               </button>
             )
           })}
