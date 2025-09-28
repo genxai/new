@@ -9,15 +9,15 @@ import { ThemeProvider } from "@/providers/theme-provider"
 import { authClient } from "@/lib/auth-client"
 import { router } from "@/routes/router"
 
-// const convex = new ConvexReactClient(import.meta.env.VITE_CONVEX_URL as string)
+const convex = new ConvexReactClient(import.meta.env.VITE_CONVEX_URL as string)
 
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
     <ThemeProvider defaultTheme="system">
       <ToastProvider>
-        {/* <ConvexBetterAuthProvider client={convex} authClient={authClient}> */}
-        <RouterProvider router={router} />
-        {/* </ConvexBetterAuthProvider> */}
+        <ConvexBetterAuthProvider client={convex} authClient={authClient}>
+          <RouterProvider router={router} />
+        </ConvexBetterAuthProvider>
       </ToastProvider>
     </ThemeProvider>
   </StrictMode>,
