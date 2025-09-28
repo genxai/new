@@ -20,8 +20,8 @@ export default function VideosIcon({ className, style }: VideosIconProps) {
           fill="currentColor"
         />
         <path
-          fill-rule="evenodd"
-          clip-rule="evenodd"
+          fillRule="evenodd"
+          clipRule="evenodd"
           d="M2 12C2 10.763 2 9.689 2.026 8.75H21.974C22 9.689 22 10.763 22 12C22 16.714 22 19.071 20.535 20.535C19.072 22 16.714 22 12 22C7.286 22 4.929 22 3.464 20.535C2 19.072 2 16.714 2 12ZM13.014 12.585C14.338 13.44 15 13.867 15 14.5C15 15.133 14.338 15.56 13.014 16.415C11.672 17.281 11.001 17.714 10.5 17.395C10 17.078 10 16.219 10 14.5C10 12.781 10 11.922 10.5 11.604C11 11.286 11.672 11.719 13.014 12.585Z"
           fill="currentColor"
         />

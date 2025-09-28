@@ -12,6 +12,7 @@ import SettingsIcon from "@/components/ui/settings-icon"
 import PlusIcon from "@/components/ui/plus-icon"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
+import { ThemeToggle } from "@/components/theme-toggle"
 import { sections, getColorFromGradient, type Section } from "@/data/sections"
 import { toast } from "@/lib/toast"
 import { useClientId } from "@/hooks/useClientId"
@@ -85,14 +86,28 @@ export default function MainPage() {
   const usageResult = useQuery(api.images.getGenerationUsage, usageArgs)
   const usage = usageResult ?? usageFallback
 
+  const isRootRoute = location.pathname === "/"
+  const preferredDefaultSection = sections.find(
+    (section) => section.id === "writing",
+  )
   const activeSection =
-    sections.find((section) => location.pathname.startsWith(section.route)) ||
-    sections[0]
+    sections.find((section) =>
+      isRootRoute
+        ? section.id === "writing"
+        : location.pathname.startsWith(section.route),
+    ) ||
+    (isRootRoute && preferredDefaultSection ? preferredDefaultSection : sections[0])
   const mode = supportedModes[activeSection.id] ?? null
 
   const prompt = promptBySection[activeSection.id] ?? ""
   const messages = messagesBySection[activeSection.id] ?? []
   const isGenerating = isGeneratingBySection[activeSection.id] ?? false
+
+  useEffect(() => {
+    if (location.pathname === "/" && preferredDefaultSection) {
+      navigate(preferredDefaultSection.route, { replace: true })
+    }
+  }, [location.pathname, navigate, preferredDefaultSection])
 
   useEffect(() => {
     if (typeof window === "undefined") {
@@ -399,6 +414,9 @@ export default function MainPage() {
 
   return (
     <div className="h-dvh bg-background text-foreground flex flex-col">
+      <header className="border-b border-border/40 px-4 py-4 flex justify-end">
+        <ThemeToggle />
+      </header>
       <main className="flex-1 flex flex-col items-center justify-between px-4 py-10">
         <div className="w-full max-w-2xl space-y-6">
           <div className="flex text-xl font-extralight justify-center gap-2 mx-auto items-center h-10">
@@ -431,7 +449,7 @@ export default function MainPage() {
           </div>
 
           <div className="max-w-xl mx-auto w-full">
-            <div className="min-h-[260px] max-h-[460px] overflow-y-auto rounded-[24px] border border-border/40 bg-background/60 p-4 shadow-[0_8px_30px_rgb(0,0,0,0.04)] space-y-4">
+            <div className="min-h-[260px] max-h-[460px] overflow-y-auto rounded-[24px] border border-border/40 bg-background/60 dark:bg-muted/20 p-4 shadow-[0_8px_30px_rgb(0,0,0,0.04)] dark:shadow-[0_8px_30px_rgba(0,0,0,0.24)] space-y-4 transition-[background-color,box-shadow]">
               {messages.length === 0 ? (
                 <EmptyState mode={mode} />
               ) : (
@@ -462,7 +480,7 @@ export default function MainPage() {
               value={prompt}
               onChange={handlePromptChange}
               disabled={!mode || (mode === "image" && isGenerating)}
-              className="w-full min-h-24 items-start rounded-[26px] text-lg pr-40 p-3 pb-12 border-0 bg-gray-200/3 shadow-[inset_0_2px_4px_rgba(0,0,0,0.1),inset_0_1px_2px_rgba(0,0,0,0.05)] dark:shadow-[inset_0_2px_4px_rgba(0,0,0,0.1),inset_0_1px_2px_rgba(0,0,0,0.05)] focus-visible:shadow-[inset_0_3px_6px_rgba(0,0,0,0.15),inset_0_1px_3px_rgba(0,0,0,0.08)] dark:focus-visible:shadow-[inset_0_3px_6px_rgba(0,0,0,0.15),inset_0_1px_3px_rgba(0,0,0,0.08)] transition-shadow"
+              className="w-full min-h-24 items-start rounded-[26px] text-lg pr-40 p-3 pb-12 border border-border/40 bg-background/80 shadow-[inset_0_2px_4px_rgba(0,0,0,0.06),inset_0_1px_2px_rgba(0,0,0,0.04)] focus-visible:border-border dark:border-border/60 dark:bg-muted/20 dark:shadow-[inset_0_2px_4px_rgba(0,0,0,0.3),inset_0_1px_2px_rgba(0,0,0,0.2)] transition-[box-shadow,border-color]"
             />
 
             <div className="absolute right-3 bottom-3 flex items-center gap-4">

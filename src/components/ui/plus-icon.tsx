@@ -12,8 +12,8 @@ export default function PlusIcon({ className }: { className?: string }) {
         <path
           d="M7 0C7.55228 0 8 0.447715 8 1V5H12C12.5523 5 13 5.44772 13 6C13 6.55228 12.5523 7 12 7H8V11C8 11.5523 7.55228 12 7 12C6.44772 12 6 11.5523 6 11V7H2C1.44772 7 1 6.55228 1 6C1 5.44772 1.44772 5 2 5H6V1C6 0.447715 6.44772 0 7 0Z"
           fill="currentColor"
-          fill-opacity="0.75"
-          shape-rendering="crispEdges"
+          fillOpacity="0.75"
+          shapeRendering="crispEdges"
         />
       </g>
       <defs>
@@ -24,9 +24,9 @@ export default function PlusIcon({ className }: { className?: string }) {
           width="13"
           height="13.25"
           filterUnits="userSpaceOnUse"
-          color-interpolation-filters="sRGB"
+          colorInterpolationFilters="sRGB"
         >
-          <feFlood flood-opacity="0" result="BackgroundImageFix" />
+          <feFlood floodOpacity="0" result="BackgroundImageFix" />
           <feColorMatrix
             in="SourceAlpha"
             type="matrix"
@@ -60,12 +60,8 @@ export default function PlusIcon({ className }: { className?: string }) {
           y2="12"
           gradientUnits="userSpaceOnUse"
         >
-          <stop style={{ stopColor: "black", stopOpacity: 1 }} />
-          <stop
-            offset="1"
-            stop-opacity="0.4"
-            style={{ stopColor: "black", stopOpacity: 0.4 }}
-          />
+          <stop stopColor="black" stopOpacity="1" />
+          <stop offset="1" stopColor="black" stopOpacity="0.4" />
         </linearGradient>
       </defs>
     </svg>

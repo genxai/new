@@ -23,8 +23,27 @@ function ThemeProvider({
     }
 
     const storedTheme = window.localStorage.getItem(storageKey) as Theme | null
+    if (storedTheme) {
+      return storedTheme
+    }
 
-    return storedTheme ?? defaultTheme
+    const root = typeof document !== "undefined" ? document.documentElement : null
+
+    if (defaultTheme === "system") {
+      const systemTheme = getSystemTheme()
+      if (root) {
+        root.classList.remove("light", "dark")
+        root.classList.add(systemTheme)
+      }
+      return "system"
+    }
+
+    if (root) {
+      root.classList.remove("light", "dark")
+      root.classList.add(defaultTheme)
+    }
+
+    return defaultTheme
   })
 
   useEffect(() => {

@@ -32,15 +32,8 @@ export default function ImagesIcon({ className, style }: ImagesIconProps) {
             y2="23.6389"
             gradientUnits="userSpaceOnUse"
           >
-            <stop
-              stop-color="currentColor"
-              style={{ stopColor: "currentColor", stopOpacity: 1 }}
-            />
-            <stop
-              offset="1"
-              stop-color="currentColor"
-              style={{ stopColor: "currentColor", stopOpacity: 1 }}
-            />
+            <stop stopColor="currentColor" stopOpacity="1" />
+            <stop offset="1" stopColor="currentColor" stopOpacity="1" />
           </linearGradient>
         </defs>
       </g>
