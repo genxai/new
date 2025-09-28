@@ -6,7 +6,7 @@ import {
   type FormEvent,
   type ReactNode,
 } from "react"
-import { useLocation, useNavigate } from "react-router-dom"
+import { Link, useLocation, useNavigate } from "react-router-dom"
 import { useAction, useConvexAuth, useQuery } from "convex/react"
 import SettingsIcon from "@/components/ui/settings-icon"
 import PlusIcon from "@/components/ui/plus-icon"
@@ -18,7 +18,7 @@ import { toast } from "@/lib/toast"
 import { useClientId } from "@/hooks/useClientId"
 import { FREE_GENERATION_LIMITS } from "@/shared/usage-limits"
 import { api } from "../../../convex/_generated/api"
-import { Sparkles, Loader2 } from "lucide-react"
+import { Sparkles, Loader2, Github, UserRound } from "lucide-react"
 import { Streamdown } from "streamdown"
 
 const GUEST_GENERATION_STORAGE_KEY = "gen.new.guest-generations"
@@ -75,7 +75,7 @@ export default function MainPage() {
 
   const location = useLocation()
   const navigate = useNavigate()
-  const { isAuthenticated } = useConvexAuth()
+  const { isAuthenticated, isLoading } = useConvexAuth()
   const generateImage = useAction(api.images.generateImage)
   const generateTextResponse = useAction(api.images.generateTextResponse)
   const clientId = useClientId()
@@ -414,8 +414,32 @@ export default function MainPage() {
 
   return (
     <div className="h-dvh bg-background text-foreground flex flex-col">
-      <header className="border-b border-border/40 px-4 py-4 flex justify-end">
-        <ThemeToggle />
+      <header className="border-b border-border/40 px-4 py-4">
+        <div className="mx-auto flex w-full max-w-5xl items-center justify-between">
+          <SiteBrand />
+          <div className="flex items-center gap-2">
+            <Button
+              variant="ghost"
+              size="icon"
+              aria-label="Open gen.new GitHub repository"
+              render={({ children, ...props }) => (
+                <a
+                  {...props}
+                  href="https://github.com/genxai/new"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  {children}
+                  <span className="sr-only">Open gen.new GitHub repository</span>
+                </a>
+              )}
+            >
+              <Github className="size-5" aria-hidden />
+            </Button>
+            <ThemeToggle />
+            <AuthAction isAuthenticated={isAuthenticated} isLoading={isLoading} />
+          </div>
+        </div>
       </header>
       <main className="flex-1 flex flex-col items-center justify-between px-4 py-10">
         <div className="w-full max-w-2xl space-y-6">
@@ -559,6 +583,44 @@ export default function MainPage() {
       </nav>
     </div>
   )
+}
+
+function SiteBrand() {
+  return (
+    <Link
+      to="/"
+      className="inline-flex items-center rounded-full border border-border/60 bg-background/80 px-4 py-1 text-sm font-semibold uppercase tracking-[0.32em] text-muted-foreground transition-colors hover:border-primary/50 hover:text-primary"
+      aria-label="Go to gen.new home page"
+    >
+      <span className="font-mono text-foreground">gen.new</span>
+    </Link>
+  )
+}
+
+type AuthActionProps = {
+  isAuthenticated: boolean
+  isLoading: boolean
+}
+
+function AuthAction({ isAuthenticated, isLoading }: AuthActionProps) {
+  if (isLoading) {
+    return null
+  }
+
+  if (isAuthenticated) {
+    return (
+      <Button
+        render={<Link to="/settings" />}
+        variant="ghost"
+        size="icon"
+        aria-label="Open settings"
+      >
+        <UserRound className="size-5" aria-hidden />
+      </Button>
+    )
+  }
+
+  return <Button render={<Link to="/auth" />}>Sign In</Button>
 }
 
 function EmptyState({ mode }: { mode: SectionMode | null }) {
