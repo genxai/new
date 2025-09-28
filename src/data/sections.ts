@@ -15,11 +15,11 @@ export type Section = {
 
 export const getColorFromGradient = (gradient: string): string => {
   const colorMap: Record<string, string> = {
-    "from-green-500": "#10b981",
-    "from-blue-500": "#3b82f6",
-    "from-purple-500": "#8b5cf6",
-    "from-orange-500": "#f97316",
-    "from-indigo-500": "#6366f1",
+    "#00ac9a": "#70c657",
+    "#9a27ad": "#fc2b61",
+    "#ff459c": "#ff7c08",
+    "#533bcc": "#8a40ca",
+    "#6762ff": "#00c0ca",
   }
 
   const fromColor = gradient.split(" ")[0]
@@ -32,7 +32,7 @@ export const sections: Section[] = [
     genName: "Image",
     navName: "Images",
     icon: ImagesIcon,
-    color: "from-green-500 to-emerald-600",
+    color: "#00ac9a #70c657",
     route: "/image",
   },
   {
@@ -40,7 +40,7 @@ export const sections: Section[] = [
     genName: "Video",
     navName: "Videos",
     icon: VideosIcon,
-    color: "from-blue-500 to-cyan-600",
+    color: "#9a27ad #fc2b61",
     route: "/video",
   },
   {
@@ -48,7 +48,7 @@ export const sections: Section[] = [
     genName: "Audio",
     navName: "Audio",
     icon: AudioIcon,
-    color: "from-purple-500 to-violet-600",
+    color: "#ff459c #ff7c08",
     route: "/audio",
   },
   {
@@ -56,7 +56,7 @@ export const sections: Section[] = [
     genName: "Writing",
     navName: "Writing",
     icon: WritingIcon,
-    color: "from-orange-500 to-red-600",
+    color: "#533bcc #8a40ca",
     route: "/writing",
   },
   {
@@ -64,7 +64,7 @@ export const sections: Section[] = [
     genName: "Code",
     navName: "Code",
     icon: CodeIcon,
-    color: "from-indigo-500 to-blue-600",
+    color: "#6762ff #00c0ca",
     route: "/code",
   },
 ]

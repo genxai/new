@@ -1,4 +1,4 @@
-export default function PlusIcon() {
+export default function PlusIcon({ className }: { className?: string }) {
   return (
     <svg
       width="14"
@@ -6,6 +6,7 @@ export default function PlusIcon() {
       viewBox="0 0 14 14"
       fill="none"
       xmlns="http://www.w3.org/2000/svg"
+      className={className}
     >
       <g filter="url(#filter0_d_11_347)">
         <path

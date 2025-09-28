@@ -22,20 +22,32 @@ export default function MainPage() {
   return (
     <div className="h-dvh bg-background text-foreground flex flex-col">
       <main className="flex-1 flex flex-col items-center justify-center px-4 py-10">
-        <div className="w-full max-w-2xl space-y-4">
-          <div className="flex text-[52px] font-extralight justify-center gap-2 mx-auto">
+        <div className="w-full max-w-2xl space-y-6">
+          <div className="flex text-xl font-extralight justify-center gap-2 mx-auto items-center h-10">
             <span
-              className={`bg-gradient-to-r ${activeSection.color} scale-y-85 font-[500] bg-clip-text text-transparent`}
+              className="scale-y-85 font-[500] bg-clip-text text-transparent flex items-center"
+              style={{
+                backgroundImage: `linear-gradient(to right, ${activeSection.color.replace(" ", ", ")})`,
+                WebkitBackgroundClip: "text",
+                backgroundClip: "text",
+              }}
             >
               gen
             </span>
-            <span className="text-foreground/80 text-[48px]">a</span>
+            <span className="text-foreground/80 flex items-center scale-y-85">
+              a
+            </span>
             <span
-              className={`bg-gradient-to-r ${activeSection.color} scale-y-85 font-[500] bg-clip-text text-transparent`}
+              className="scale-y-85 font-[500] bg-clip-text text-transparent flex items-center"
+              style={{
+                backgroundImage: `linear-gradient(to right, ${activeSection.color.replace(" ", ", ")})`,
+                WebkitBackgroundClip: "text",
+                backgroundClip: "text",
+              }}
             >
               new
             </span>
-            <span className="text-foreground/80">
+            <span className="text-foreground/80 flex items-center scale-y-85">
               {activeSection.genName.toLowerCase()}
             </span>
           </div>
@@ -46,27 +58,23 @@ export default function MainPage() {
               placeholder="Background of soft, abstract gradient pastels"
               value={prompt}
               onChange={(e) => setPrompt(e.target.value)}
-              className="w-full min-h-24 items-start rounded-[26px] text-lg pr-40 pt-3 pb-12 border-0 bg-gray-50/5 shadow-[inset_0_2px_4px_rgba(0,0,0,0.1),inset_0_1px_2px_rgba(0,0,0,0.05)] dark:shadow-[inset_0_2px_4px_rgba(0,0,0,0.1),inset_0_1px_2px_rgba(0,0,0,0.05)] focus-visible:shadow-[inset_0_3px_6px_rgba(0,0,0,0.15),inset_0_1px_3px_rgba(0,0,0,0.08)] dark:focus-visible:shadow-[inset_0_3px_6px_rgba(0,0,0,0.15),inset_0_1px_3px_rgba(0,0,0,0.08)] transition-shadow"
+              className="w-full min-h-24 items-start rounded-[26px] text-lg pr-40 p-3 pb-12 border-0 bg-gray-200/3 shadow-[inset_0_2px_4px_rgba(0,0,0,0.1),inset_0_1px_2px_rgba(0,0,0,0.05)] dark:shadow-[inset_0_2px_4px_rgba(0,0,0,0.1),inset_0_1px_2px_rgba(0,0,0,0.05)] focus-visible:shadow-[inset_0_3px_6px_rgba(0,0,0,0.15),inset_0_1px_3px_rgba(0,0,0,0.08)] dark:focus-visible:shadow-[inset_0_3px_6px_rgba(0,0,0,0.15),inset_0_1px_3px_rgba(0,0,0,0.08)] transition-shadow"
             />
 
-            <div className="absolute right-3 bottom-3 flex items-center gap-2">
-              <Button
-                variant="icon"
-                size="icon"
-                className="h-8 w-8 rounded-full"
-              >
+            <div className="absolute right-3 bottom-3 flex items-center gap-4">
+              <Button variant="icon" size="md" className="h-8 w-8 rounded-full">
                 <PlusIcon />
               </Button>
-              <Button
-                variant="icon"
-                size="icon"
-                className="h-8 w-8 rounded-full"
-              >
+              <Button variant="icon" size="md" className="h-8 w-8 rounded-full">
                 <SettingsIcon />
               </Button>
               <Button
                 size="md"
-                className={`text-sm font-medium bg-gradient-to-r ${activeSection.color} hover:opacity-90 px-4 py-1 transition-opacity`}
+                className="text-sm font-medium text-white px-5 py-1.5 rounded-[12px] transition-all duration-200"
+                style={{
+                  background: `linear-gradient(to right, ${activeSection.color.replace(" ", ", ")})`,
+                  boxShadow: `0px 5px 10px 0px ${getColorFromGradient(activeSection.color)}33, 0px 1px 4px 0px ${getColorFromGradient(activeSection.color)}A5, 0px -0.5px 0px 0px color(display-p3 1 1 1 / 0.10) inset, 0px 0.5px 0px 0px color(display-p3 1 1 1 / 0.20) inset`,
+                }}
               >
                 Generate
               </Button>
@@ -88,18 +96,26 @@ export default function MainPage() {
                 className="flex flex-col items-center cursor-pointer gap-1 p-2"
               >
                 <Icon
-                  className="h-5 w-5 transition-colors text-muted-foreground/50 hover:text-foreground"
+                  className="h-5 w-5 transition-colors text-muted-foreground/50"
                   style={
                     isActive
-                      ? { color: getColorFromGradient(section.color) }
+                      ? {
+                          color: getColorFromGradient(section.color),
+                        }
                       : undefined
                   }
                 />
                 <span
-                  className="text-xs font-medium"
+                  className="text-xs font-medium text-muted-foreground/50"
                   style={
                     isActive
-                      ? { color: getColorFromGradient(section.color) }
+                      ? {
+                          backgroundImage: `linear-gradient(to right, ${section.color.replace(" ", ", ")})`,
+                          WebkitBackgroundClip: "text",
+                          backgroundClip: "text",
+                          color: "transparent",
+                          WebkitTextFillColor: "transparent",
+                        }
                       : undefined
                   }
                 >
