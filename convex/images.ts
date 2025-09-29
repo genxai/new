@@ -4,6 +4,8 @@ import { api } from "./_generated/api"
 import { generateText } from "ai"
 import type { Id } from "./_generated/dataModel"
 import { FREE_GENERATION_LIMITS } from "../shared/usage-limits"
+import { POLAR_TEXT_PLAN_PRICE_USD } from "../shared/polar"
+import { hasActiveTextPlan, polarIntegration } from "./polar"
 
 type AiGenerateTextResult = Awaited<ReturnType<typeof generateText>>
 
@@ -11,6 +13,21 @@ const MAX_FREE_GENERATION_LIMIT = Math.max(
   FREE_GENERATION_LIMITS.anonymous,
   FREE_GENERATION_LIMITS.authenticated,
 )
+
+type GenerationUsageSummary = {
+  imageTotal: number
+  completed: number
+  textCount: number
+  hasTextSubscription: boolean
+}
+
+type TextResponsePayload = {
+  success: boolean
+  text: string
+  isFallback: boolean
+  limitReached: boolean
+  hasTextSubscription: boolean
+}
 
 export const generateImage = action({
   args: {
@@ -206,7 +223,7 @@ export const getGenerationUsage = query({
     userId: v.optional(v.string()),
     clientId: v.optional(v.string()),
   },
-  handler: async (ctx, args) => {
+  handler: async (ctx, args): Promise<GenerationUsageSummary> => {
     const providedUserId = args.userId
     const identity = providedUserId ? null : await ctx.auth.getUserIdentity()
     const resolvedUserId = providedUserId
@@ -218,7 +235,7 @@ export const getGenerationUsage = query({
           : null
 
     if (!resolvedUserId) {
-      return { imageTotal: 0, completed: 0, textCount: 0 }
+      return { imageTotal: 0, completed: 0, textCount: 0, hasTextSubscription: false }
     }
 
     const generations = await ctx.db
@@ -238,29 +255,31 @@ export const getGenerationUsage = query({
       .withIndex("by_user", (q) => q.eq("userId", resolvedUserId))
       .take(MAX_FREE_GENERATION_LIMIT + 1)
 
+    const isGuestUser = resolvedUserId.startsWith("guest:")
+
+    const subscription = isGuestUser
+      ? null
+      : await polarIntegration
+          .getCurrentSubscription(ctx, {
+            userId: resolvedUserId,
+          })
+          .catch((error: unknown) => {
+            console.error("Failed to resolve Polar subscription", error)
+            return null
+          })
+
+    const hasTextSubscription = hasActiveTextPlan(subscription)
+
     return {
       imageTotal: generations.length,
       completed,
       textCount: textInteractions.length,
+      hasTextSubscription,
     }
   },
 })
 
-type GenerationUsageSummary = {
-  imageTotal: number
-  completed: number
-  textCount: number
-}
-
-type TextResponsePayload = {
-  success: boolean
-  text: string
-  isFallback: boolean
-  limitReached: boolean
-}
-
-const FALLBACK_LIMIT_MESSAGE =
-  "You've reached the free text limit. Sign in to keep the conversation going."
+const FALLBACK_LIMIT_MESSAGE = `You've reached the free text limit. Upgrade for $${POLAR_TEXT_PLAN_PRICE_USD} to keep the conversation going.`
 const FALLBACK_UNAVAILABLE_MESSAGE =
   "Text generation is temporarily unavailable. Please try again later."
 
@@ -287,12 +306,17 @@ export const generateTextResponse = action({
       clientId: args.clientId,
     })) as GenerationUsageSummary
 
-    const limit = isAuthenticated
-      ? FREE_GENERATION_LIMITS.authenticated
-      : FREE_GENERATION_LIMITS.anonymous
+    const hasTextSubscription = Boolean(textUsage.hasTextSubscription)
 
-    const limitReached = textUsage.textCount >= limit
-    const shouldEnforceLimit = isAuthenticated && limitReached
+    const limit = hasTextSubscription
+      ? Number.POSITIVE_INFINITY
+      : isAuthenticated
+        ? FREE_GENERATION_LIMITS.authenticated
+        : FREE_GENERATION_LIMITS.anonymous
+
+    const limitReached = !hasTextSubscription && textUsage.textCount >= limit
+    const shouldEnforceLimit =
+      isAuthenticated && limitReached && !hasTextSubscription
 
     let result: AiGenerateTextResult | null = null
     let text = ""
@@ -347,6 +371,7 @@ export const generateTextResponse = action({
       text,
       isFallback,
       limitReached,
+      hasTextSubscription,
     }
   },
 })

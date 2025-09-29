@@ -8,7 +8,8 @@ import { Button } from "@/components/ui/button"
 import { toast } from "@/lib/toast"
 import { useClientId } from "@/hooks/useClientId"
 import { FREE_GENERATION_LIMITS } from "@/shared/usage-limits"
-import { api } from "../../../convex/_generated/api"
+import PolarPaywallDialog from "@/components/PolarPaywallDialog"
+import { api } from "@/convex/api"
 
 const GUEST_GENERATION_STORAGE_KEY = "gen.new.guest-generations"
 const GUEST_TEXT_STORAGE_KEY = "gen.new.guest-text"
@@ -86,6 +87,7 @@ export default function LandingPage() {
   const [guestTextCount, setGuestTextCount] = useState(0)
   const [mode, setMode] = useState<"text" | "image">("text")
   const [messages, setMessages] = useState<ChatMessage[]>([])
+  const [showPaywall, setShowPaywall] = useState(false)
   const { isAuthenticated, isLoading } = useConvexAuth()
   const generateImage = useAction(api.images.generateImage)
   const generateTextResponse = useAction(api.images.generateTextResponse)
@@ -96,7 +98,14 @@ export default function LandingPage() {
   )
   const usageResult = useQuery(api.images.getGenerationUsage, usageArgs)
   const usage =
-    usageResult ?? ({ imageTotal: 0, completed: 0, textCount: 0 } as const)
+    usageResult ??
+    ({ imageTotal: 0, completed: 0, textCount: 0, hasTextSubscription: false } as const)
+
+  useEffect(() => {
+    if (usage.hasTextSubscription && showPaywall) {
+      setShowPaywall(false)
+    }
+  }, [usage.hasTextSubscription, showPaywall])
 
   useEffect(() => {
     if (typeof window === "undefined") {
@@ -150,7 +159,8 @@ export default function LandingPage() {
       }
     }
     if (mode === "text") {
-      const limit = isAuthenticated
+      const hasTextSubscription = usage.hasTextSubscription
+      const freeLimit = isAuthenticated
         ? FREE_AUTH_GENERATIONS
         : FREE_GUEST_GENERATIONS
 
@@ -159,12 +169,8 @@ export default function LandingPage() {
           toast.info("Setting up your session, please try again.")
           return
         }
-      } else if (usage.textCount >= limit) {
-        toast.info({
-          title: "Free limit reached",
-          description:
-            "You've used all free text messages. The limit resets in 1 day.",
-        })
+      } else if (!hasTextSubscription && usage.textCount >= freeLimit) {
+        setShowPaywall(true)
         return
       }
     }
@@ -208,11 +214,15 @@ export default function LandingPage() {
           ),
         )
 
-        if (result.limitReached) {
-          toast.info({
-            title: "Create an account",
-            description: "Sign in to keep the conversation going.",
-          })
+        if (result.limitReached && !result.hasTextSubscription) {
+          if (isAuthenticated) {
+            setShowPaywall(true)
+          } else {
+            toast.info({
+              title: "Create an account",
+              description: "Sign in to keep the conversation going.",
+            })
+          }
         } else if (result.isFallback) {
           toast.info(
             "Text generation is temporarily unavailable. Try again later.",
@@ -442,6 +452,11 @@ export default function LandingPage() {
           </form>
         </div>
       </main>
+      <PolarPaywallDialog
+        open={showPaywall}
+        onOpenChange={setShowPaywall}
+        hasTextSubscription={usage.hasTextSubscription}
+      />
     </div>
   )
 }

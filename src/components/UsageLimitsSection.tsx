@@ -8,6 +8,7 @@ import {
 type UsageSnapshot = {
   imageTotal: number
   textCount: number
+  hasTextSubscription?: boolean
 }
 
 type UsageLimitsSectionProps = {
@@ -16,19 +17,6 @@ type UsageLimitsSectionProps = {
   usage?: UsageSnapshot | null
   isLoading?: boolean
 }
-
-const LIMIT_CATEGORIES = [
-  {
-    key: "text",
-    label: "Text messages",
-    accessor: (usage: UsageSnapshot) => usage.textCount,
-  },
-  {
-    key: "image",
-    label: "Image generations",
-    accessor: (usage: UsageSnapshot) => usage.imageTotal,
-  },
-] as const
 
 const formatRemainingLabel = (remaining: number) => {
   if (remaining <= 0) {
@@ -52,12 +40,37 @@ export default function UsageLimitsSection({
       ? "day"
       : `${DAILY_LIMIT_RESET_WINDOW_HOURS} hours`
   const HeadingTag = headingLevel
-  const snapshot = usage ?? { imageTotal: 0, textCount: 0 }
+  const snapshot = usage ?? {
+    imageTotal: 0,
+    textCount: 0,
+    hasTextSubscription: false,
+  }
   const showSkeleton = Boolean(isLoading && !usage)
+
+  const hasTextSubscription = Boolean(snapshot.hasTextSubscription)
 
   const summary = showSkeleton
     ? `You can send up to ${authenticatedDailyLimit} text messages and generate ${authenticatedDailyLimit} images each day.`
-    : `You've used ${Math.min(snapshot.textCount, authenticatedDailyLimit)} of ${authenticatedDailyLimit} text messages and ${Math.min(snapshot.imageTotal, authenticatedDailyLimit)} of ${authenticatedDailyLimit} image generations today.`
+    : hasTextSubscription
+      ? `Unlimited text responses unlocked. Image generations remain capped at ${authenticatedDailyLimit} per day.`
+      : `You've used ${Math.min(snapshot.textCount, authenticatedDailyLimit)} of ${authenticatedDailyLimit} text messages and ${Math.min(snapshot.imageTotal, authenticatedDailyLimit)} of ${authenticatedDailyLimit} image generations today.`
+
+  const limits = [
+    {
+      key: "text" as const,
+      label: "Text messages",
+      used: snapshot.textCount,
+      limit: hasTextSubscription ? null : authenticatedDailyLimit,
+      unlimited: hasTextSubscription,
+    },
+    {
+      key: "image" as const,
+      label: "Image generations",
+      used: snapshot.imageTotal,
+      limit: authenticatedDailyLimit,
+      unlimited: false,
+    },
+  ]
 
   return (
     <section className={cn("space-y-4", className)}>
@@ -68,9 +81,14 @@ export default function UsageLimitsSection({
         <p className="text-sm text-muted-foreground">{summary}</p>
       </div>
       <dl className="grid gap-4 sm:grid-cols-2">
-        {LIMIT_CATEGORIES.map((item) => {
-          const used = Math.min(item.accessor(snapshot), authenticatedDailyLimit)
-          const remaining = Math.max(authenticatedDailyLimit - used, 0)
+        {limits.map((item) => {
+          const used = item.unlimited
+            ? item.used
+            : Math.min(item.used, item.limit ?? 0)
+          const remaining =
+            item.unlimited || item.limit === null
+              ? null
+              : Math.max((item.limit ?? 0) - used, 0)
 
           return (
             <div key={item.key} className="rounded-lg border bg-muted/40 p-4">
@@ -86,11 +104,25 @@ export default function UsageLimitsSection({
                 ) : (
                   <div className="space-y-1">
                     <div className="text-2xl font-semibold">
-                      {used} / {authenticatedDailyLimit} used
+                      {item.unlimited ? (
+                        <span className="text-primary">Unlimited</span>
+                      ) : (
+                        <>
+                          {used} / {item.limit} used
+                        </>
+                      )}
                     </div>
-                    <div className="text-xs text-muted-foreground">
-                      {formatRemainingLabel(remaining)}
-                    </div>
+                    {item.unlimited ? (
+                      <div className="text-xs text-muted-foreground">
+                        Included with your $5 upgrade
+                      </div>
+                    ) : (
+                      <div className="text-xs text-muted-foreground">
+                        {remaining !== null
+                          ? formatRemainingLabel(remaining)
+                          : null}
+                      </div>
+                    )}
                   </div>
                 )}
               </dd>

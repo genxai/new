@@ -19,8 +19,16 @@
     "moduleResolution": "Bundler",
     "isolatedModules": true,
     "noEmit": true,
-    "customConditions": ["@convex-dev/component-source"]
+    "customConditions": ["@convex-dev/component-source"],
+    "paths": {
+      "@convex-dev/polar": ["../node_modules/@convex-dev/polar/dist/esm/client/index"],
+      "@convex-dev/polar/react": ["../node_modules/@convex-dev/polar/dist/esm/react/index"]
+    }
   },
   "include": ["./**/*"],
-  "exclude": ["./_generated"]
+  "exclude": [
+    "./_generated",
+    "../node_modules/@convex-dev/polar",
+    "../node_modules/@convex-dev/polar/**/*"
+  ]
 }

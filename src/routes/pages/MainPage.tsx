@@ -8,6 +8,8 @@ import {
 } from "react"
 import { Link, useLocation, useNavigate } from "react-router-dom"
 import { useAction, useConvexAuth, useQuery } from "convex/react"
+import { Sparkles, Loader2, Github, UserRound } from "lucide-react"
+import { Streamdown } from "streamdown"
 import SettingsIcon from "@/components/ui/settings-icon"
 import PlusIcon from "@/components/ui/plus-icon"
 import { Button } from "@/components/ui/button"
@@ -17,9 +19,8 @@ import { sections, getColorFromGradient, type Section } from "@/data/sections"
 import { toast } from "@/lib/toast"
 import { useClientId } from "@/hooks/useClientId"
 import { FREE_GENERATION_LIMITS } from "@/shared/usage-limits"
-import { api } from "../../../convex/_generated/api"
-import { Sparkles, Loader2, Github, UserRound } from "lucide-react"
-import { Streamdown } from "streamdown"
+import PolarPaywallDialog from "@/components/PolarPaywallDialog"
+import { api } from "@/convex/api"
 
 const GUEST_GENERATION_STORAGE_KEY = "gen.new.guest-generations"
 const GUEST_TEXT_STORAGE_KEY = "gen.new.guest-text"
@@ -31,7 +32,12 @@ const supportedModes: Partial<Record<Section["id"], SectionMode>> = {
   writing: "text",
 }
 
-const usageFallback = { imageTotal: 0, completed: 0, textCount: 0 } as const
+const usageFallback = {
+  imageTotal: 0,
+  completed: 0,
+  textCount: 0,
+  hasTextSubscription: false,
+} as const
 
 type SectionMode = "text" | "image"
 
@@ -72,6 +78,7 @@ export default function MainPage() {
     useState<SectionStateMap<boolean>>({})
   const [guestGenerationCount, setGuestGenerationCount] = useState(0)
   const [guestTextCount, setGuestTextCount] = useState(0)
+  const [showPaywall, setShowPaywall] = useState(false)
 
   const location = useLocation()
   const navigate = useNavigate()
@@ -126,6 +133,12 @@ export default function MainPage() {
       }
     }
   }, [])
+
+  useEffect(() => {
+    if (usage.hasTextSubscription && showPaywall) {
+      setShowPaywall(false)
+    }
+  }, [usage.hasTextSubscription, showPaywall])
 
   const handleSectionClick = (section: Section) => {
     if (section.id === "writing") {
@@ -208,7 +221,8 @@ export default function MainPage() {
     }
 
     if (currentMode === "text") {
-      const limit = isAuthenticated
+      const hasTextSubscription = usage.hasTextSubscription
+      const freeLimit = isAuthenticated
         ? FREE_AUTH_GENERATIONS
         : FREE_GUEST_GENERATIONS
 
@@ -217,11 +231,8 @@ export default function MainPage() {
           toast.info("Setting up your session, please try again.")
           return
         }
-      } else if (usage.textCount >= limit) {
-        toast.info({
-          title: "Free limit reached",
-          description: "You've used all free text messages. The limit resets in 1 day.",
-        })
+      } else if (!hasTextSubscription && usage.textCount >= freeLimit) {
+        setShowPaywall(true)
         return
       }
     }
@@ -274,11 +285,15 @@ export default function MainPage() {
           ),
         )
 
-        if (result.limitReached) {
-          toast.info({
-            title: "Create an account",
-            description: "Sign in to keep the conversation going.",
-          })
+        if (result.limitReached && !result.hasTextSubscription) {
+          if (isAuthenticated) {
+            setShowPaywall(true)
+          } else {
+            toast.info({
+              title: "Create an account",
+              description: "Sign in to keep the conversation going.",
+            })
+          }
         } else if (result.isFallback) {
           toast.info(
             "Text generation is temporarily unavailable. Try again later.",
@@ -559,6 +574,11 @@ export default function MainPage() {
           })}
         </div>
       </nav>
+      <PolarPaywallDialog
+        open={showPaywall}
+        onOpenChange={setShowPaywall}
+        hasTextSubscription={usage.hasTextSubscription}
+      />
     </div>
   )
 }
