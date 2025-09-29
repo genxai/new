@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState, type ReactNode } from "react"
-import { useNavigate, Link } from "react-router-dom"
+import { Link } from "react-router-dom"
 import { useAction, useConvexAuth, useQuery } from "convex/react"
 import { Github, Image as ImageIcon, Sparkles, UserRound } from "lucide-react"
 import { Streamdown } from "streamdown"
@@ -78,7 +78,17 @@ function AuthAction({ isAuthenticated, isLoading }: AuthActionProps) {
     )
   }
 
-  return <Button render={<Link to="/auth" />}>Sign In</Button>
+  return (
+    <Button
+      render={<Link to="/auth" />}
+      variant="signin"
+      size="lg"
+      className="px-5"
+    >
+      <UserRound className="size-4" aria-hidden />
+      Sign in
+    </Button>
+  )
 }
 
 export default function LandingPage() {
@@ -88,7 +98,6 @@ export default function LandingPage() {
   const [guestTextCount, setGuestTextCount] = useState(0)
   const [mode, setMode] = useState<"text" | "image">("text")
   const [messages, setMessages] = useState<ChatMessage[]>([])
-  const navigate = useNavigate()
   const { isAuthenticated, isLoading } = useConvexAuth()
   const generateImage = useAction(api.images.generateImage)
   const generateTextResponse = useAction(api.images.generateTextResponse)
@@ -138,24 +147,16 @@ export default function LandingPage() {
     }
 
     if (mode === "image") {
-      if (!isAuthenticated) {
-        if (!clientId) {
-          toast.info("Setting up your session, please try again.")
-          return
-        }
+      if (!isAuthenticated && !clientId) {
+        toast.info("Setting up your session, please try again.")
+        return
+      }
 
-        if (guestGenerationCount >= FREE_GUEST_GENERATIONS) {
-          toast.info({
-            title: "Create an account",
-            description: "Sign in to keep generating new images.",
-          })
-          navigate("/auth")
-          return
-        }
-      } else if (usage.imageTotal >= FREE_AUTH_GENERATIONS) {
+      if (isAuthenticated && usage.imageTotal >= FREE_AUTH_GENERATIONS) {
         toast.info({
           title: "Free limit reached",
-          description: "You've used all free images. The limit resets in 1 day.",
+          description:
+            "You've used all free images. The limit resets in 1 day.",
         })
         return
       }
@@ -170,19 +171,11 @@ export default function LandingPage() {
           toast.info("Setting up your session, please try again.")
           return
         }
-
-        if (guestTextCount >= limit) {
-          toast.info({
-            title: "Create an account",
-            description: "Sign in to keep the conversation going.",
-          })
-          navigate("/auth")
-          return
-        }
       } else if (usage.textCount >= limit) {
         toast.info({
           title: "Free limit reached",
-          description: "You've used all free text messages. The limit resets in 1 day.",
+          description:
+            "You've used all free text messages. The limit resets in 1 day.",
         })
         return
       }
@@ -227,13 +220,18 @@ export default function LandingPage() {
           ),
         )
 
-        if (result.isFallback) {
+        if (result.limitReached) {
+          toast.info({
+            title: "Create an account",
+            description: "Sign in to keep the conversation going.",
+          })
+        } else if (result.isFallback) {
           toast.info(
             "Text generation is temporarily unavailable. Try again later.",
           )
         }
 
-        if (!isAuthenticated) {
+        if (!isAuthenticated && !result.limitReached) {
           const nextTextCount = guestTextCount + 1
           setGuestTextCount(nextTextCount)
           if (typeof window !== "undefined") {
@@ -274,7 +272,7 @@ export default function LandingPage() {
               ? {
                   ...message,
                   imageUrls: result.imageUrls,
-                  description: result.description ?? message.description,
+                  // description: result.description ?? message.description,
                   status: "completed",
                 }
               : message,
@@ -306,12 +304,6 @@ export default function LandingPage() {
           ),
         )
 
-        if (
-          !isAuthenticated &&
-          errorMessage.includes("Free generation limit")
-        ) {
-          navigate("/auth")
-        }
       } else {
         setMessages((prev) =>
           prev.map((entry) =>
@@ -321,13 +313,6 @@ export default function LandingPage() {
           ),
         )
 
-        if (
-          !isAuthenticated &&
-          (errorMessage.includes("Free text generation limit") ||
-            errorMessage.includes("Free generation limit"))
-        ) {
-          navigate("/auth")
-        }
       }
     } finally {
       setIsGenerating(false)
@@ -372,9 +357,9 @@ export default function LandingPage() {
       <main className="flex-1 flex flex-col px-4 py-10 overflow-hidden">
         <div className="w-full max-w-3xl mx-auto flex-1 flex flex-col gap-6 overflow-hidden">
           <div className="text-center space-y-2">
-            <h1 className="text-3xl font-bold">Generate anything</h1>
+            <h1 className="text-3xl font-bold">Chat</h1>
             <p className="text-muted-foreground">
-              Ask questions or generate images
+              Start chatting instantly or switch to image generation when you need visuals.
             </p>
           </div>
 
@@ -386,11 +371,10 @@ export default function LandingPage() {
                 </span>
                 <div>
                   <p className="font-medium text-foreground">
-                    Start the conversation
+                    Start chatting
                   </p>
                   <p className="text-sm">
-                    Type a question or toggle the image icon to describe what
-                    you want to see.
+                    Ask anything with Chat, or toggle the image icon when you need visuals.
                   </p>
                 </div>
               </div>
@@ -419,7 +403,9 @@ export default function LandingPage() {
               <Input
                 type="text"
                 placeholder={
-                  mode === "text" ? "Ask anything" : "Generate image"
+                  mode === "text"
+                    ? "Ask anything in chat"
+                    : "Describe the image you want to see"
                 }
                 value={prompt}
                 onChange={(e) => setPrompt(e.target.value)}
@@ -522,7 +508,9 @@ function ChatBubble({ message }: { message: ChatMessage }) {
   const bubbleClass = `max-w-[80%] rounded-2xl px-4 py-3 text-sm leading-relaxed ${isUser ? "bg-primary text-primary-foreground" : "bg-muted text-foreground"}`
   const bubbleProps =
     message.role === "assistant" && message.type === "text"
-      ? ({ "aria-live": message.status === "completed" ? "off" : "polite" } as const)
+      ? ({
+          "aria-live": message.status === "completed" ? "off" : "polite",
+        } as const)
       : undefined
 
   let content: ReactNode
