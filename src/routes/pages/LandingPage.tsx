@@ -78,7 +78,17 @@ function AuthAction({ isAuthenticated, isLoading }: AuthActionProps) {
     )
   }
 
-  return <Button render={<Link to="/auth" />}>Sign In</Button>
+  return (
+    <Button
+      render={<Link to="/auth" />}
+      variant="signin"
+      size="lg"
+      className="px-5"
+    >
+      <UserRound className="size-4" aria-hidden />
+      Sign in
+    </Button>
+  )
 }
 
 export default function LandingPage() {
@@ -347,9 +357,9 @@ export default function LandingPage() {
       <main className="flex-1 flex flex-col px-4 py-10 overflow-hidden">
         <div className="w-full max-w-3xl mx-auto flex-1 flex flex-col gap-6 overflow-hidden">
           <div className="text-center space-y-2">
-            <h1 className="text-3xl font-bold">Generate anything</h1>
+            <h1 className="text-3xl font-bold">Chat</h1>
             <p className="text-muted-foreground">
-              Ask questions or generate images
+              Start chatting instantly or switch to image generation when you need visuals.
             </p>
           </div>
 
@@ -361,11 +371,10 @@ export default function LandingPage() {
                 </span>
                 <div>
                   <p className="font-medium text-foreground">
-                    Start the conversation
+                    Start chatting
                   </p>
                   <p className="text-sm">
-                    Type a question or toggle the image icon to describe what
-                    you want to see.
+                    Ask anything with Chat, or toggle the image icon when you need visuals.
                   </p>
                 </div>
               </div>
@@ -394,7 +403,9 @@ export default function LandingPage() {
               <Input
                 type="text"
                 placeholder={
-                  mode === "text" ? "Ask anything" : "Generate image"
+                  mode === "text"
+                    ? "Ask anything in chat"
+                    : "Describe the image you want to see"
                 }
                 value={prompt}
                 onChange={(e) => setPrompt(e.target.value)}

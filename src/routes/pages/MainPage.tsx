@@ -104,12 +104,6 @@ export default function MainPage() {
   const isGenerating = isGeneratingBySection[activeSection.id] ?? false
 
   useEffect(() => {
-    if (location.pathname === "/" && preferredDefaultSection) {
-      navigate(preferredDefaultSection.route, { replace: true })
-    }
-  }, [location.pathname, navigate, preferredDefaultSection])
-
-  useEffect(() => {
     if (typeof window === "undefined") {
       return
     }
@@ -134,6 +128,11 @@ export default function MainPage() {
   }, [])
 
   const handleSectionClick = (section: Section) => {
+    if (section.id === "writing") {
+      navigate("/")
+      return
+    }
+
     navigate(section.route)
   }
 
@@ -374,7 +373,7 @@ export default function MainPage() {
   const promptPlaceholder = mode === "image"
     ? "Background of soft, abstract gradient pastels"
     : mode === "text"
-      ? "Ask anything"
+      ? "Ask anything in chat"
       : "Coming soon"
 
   const generateLabel = mode === "image"
@@ -600,7 +599,17 @@ function AuthAction({ isAuthenticated, isLoading }: AuthActionProps) {
     )
   }
 
-  return <Button render={<Link to="/auth" />}>Sign In</Button>
+  return (
+    <Button
+      render={<Link to="/auth" />}
+      variant="signin"
+      size="lg"
+      className="px-5"
+    >
+      <UserRound className="size-4" aria-hidden />
+      Sign in
+    </Button>
+  )
 }
 
 function EmptyState({ mode }: { mode: SectionMode | null }) {
@@ -619,7 +628,7 @@ function EmptyState({ mode }: { mode: SectionMode | null }) {
       </span>
       <div className="space-y-1">
         <p className="font-medium text-foreground">
-          {mode === "text" ? "Start writing" : "Create something visual"}
+          {mode === "text" ? "Start chatting" : "Create something visual"}
         </p>
         <p className="text-sm">
           {mode === "text"

@@ -28,6 +28,14 @@ export const getColorFromGradient = (gradient: string): string => {
 
 export const sections: Section[] = [
   {
+    id: "writing",
+    genName: "Chat",
+    navName: "Chat",
+    icon: WritingIcon,
+    color: "#533bcc #8a40ca",
+    route: "/writing",
+  },
+  {
     id: "image",
     genName: "Image",
     navName: "Images",
@@ -50,14 +58,6 @@ export const sections: Section[] = [
     icon: AudioIcon,
     color: "#ff459c #ff7c08",
     route: "/audio",
-  },
-  {
-    id: "writing",
-    genName: "Writing",
-    navName: "Writing",
-    icon: WritingIcon,
-    color: "#533bcc #8a40ca",
-    route: "/writing",
   },
   {
     id: "code",
