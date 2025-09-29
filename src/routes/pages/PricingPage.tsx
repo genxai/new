@@ -57,20 +57,31 @@ export default function PricingPage() {
 
   return (
     <div className="mx-auto flex w-full max-w-4xl flex-col gap-10 px-6 py-16">
+      <button
+        type="button"
+        onClick={() => {
+          checkout({
+            productId: MESSAGE_TOP_UP_PRODUCT_ID,
+            dialog: CheckoutDialog,
+            // TODO: make it proper for dev
+            successUrl: "https://gen.new",
+          })
+        }}
+      >
+        Get Pro
+      </button>
       <header className="text-center space-y-4">
         <h1 className="text-4xl font-semibold tracking-tight">Pricing</h1>
         <p className="text-muted-foreground text-lg">
-          Send 10 text messages for free each day. Unlock an additional{' '}
-          {MESSAGE_TOP_UP_BUNDLE_SIZE.toLocaleString()} messages with a one-time $
-          {MESSAGE_TOP_UP_PRICE_USD} top-up.
+          Send 10 text messages for free each day. Unlock an additional{" "}
+          {MESSAGE_TOP_UP_BUNDLE_SIZE.toLocaleString()} messages with a one-time
+          ${MESSAGE_TOP_UP_PRICE_USD} top-up.
         </p>
         <div className="flex justify-center">
-          <Button
-            type="button"
-            onClick={handleCheckout}
-            disabled={isPending}
-          >
-            {isPending ? "Starting checkout..." : `Buy ${MESSAGE_TOP_UP_BUNDLE_SIZE.toLocaleString()} messages for $${MESSAGE_TOP_UP_PRICE_USD}`}
+          <Button type="button" onClick={handleCheckout} disabled={isPending}>
+            {isPending
+              ? "Starting checkout..."
+              : `Buy ${MESSAGE_TOP_UP_BUNDLE_SIZE.toLocaleString()} messages for $${MESSAGE_TOP_UP_PRICE_USD}`}
           </Button>
         </div>
       </header>

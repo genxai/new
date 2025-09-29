@@ -1,11 +1,10 @@
 import { components } from "./_generated/api"
 import { Autumn } from "@useautumn/convex"
+import type { GenericCtx } from "./_generated/server"
 
-const autumnComponent = ((components as any)?.autumn ?? {}) as any
-
-export const autumn = new Autumn(autumnComponent, {
+export const autumn = new Autumn(components.autumn, {
   secretKey: process.env.AUTUMN_SECRET_KEY ?? "",
-  identify: async (ctx: any) => {
+  identify: async (ctx: GenericCtx) => {
     const user = await ctx.auth.getUserIdentity()
     if (!user) return null
 
