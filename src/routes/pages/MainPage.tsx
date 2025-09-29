@@ -394,8 +394,7 @@ export default function MainPage() {
   return (
     <div className="h-dvh bg-background text-foreground flex flex-col">
       <header className="border-b border-border/40 px-4 py-4">
-        <div className="mx-auto flex w-full max-w-5xl items-center justify-between">
-          <SiteBrand />
+        <div className="mx-auto flex w-full max-w-5xl items-center justify-end">
           <div className="flex items-center gap-2">
             <Button
               variant="ghost"
@@ -561,18 +560,6 @@ export default function MainPage() {
         </div>
       </nav>
     </div>
-  )
-}
-
-function SiteBrand() {
-  return (
-    <Link
-      to="/"
-      className="inline-flex items-center rounded-full border border-border/60 bg-background/80 px-4 py-1 text-sm font-semibold uppercase tracking-[0.32em] text-muted-foreground transition-colors hover:border-primary/50 hover:text-primary"
-      aria-label="Go to gen.new home page"
-    >
-      <span className="font-mono text-foreground">gen.new</span>
-    </Link>
   )
 }
 
