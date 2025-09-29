@@ -8,6 +8,7 @@ import {
 } from "react"
 import { Link, useLocation, useNavigate } from "react-router-dom"
 import { useAction, useConvexAuth, useQuery } from "convex/react"
+import { useCustomer, CheckoutDialog } from "autumn-js/react"
 import SettingsIcon from "@/components/ui/settings-icon"
 import PlusIcon from "@/components/ui/plus-icon"
 import { Button } from "@/components/ui/button"
@@ -17,6 +18,11 @@ import { sections, getColorFromGradient, type Section } from "@/data/sections"
 import { toast } from "@/lib/toast"
 import { useClientId } from "@/hooks/useClientId"
 import { FREE_GENERATION_LIMITS } from "@/shared/usage-limits"
+import {
+  MESSAGE_TOP_UP_BUNDLE_SIZE,
+  MESSAGE_TOP_UP_PRICE_USD,
+  MESSAGE_TOP_UP_PRODUCT_ID,
+} from "@/shared/pricing"
 import { api } from "../../../convex/_generated/api"
 import { Sparkles, Loader2, Github, UserRound } from "lucide-react"
 import { Streamdown } from "streamdown"
@@ -31,7 +37,15 @@ const supportedModes: Partial<Record<Section["id"], SectionMode>> = {
   writing: "text",
 }
 
-const usageFallback = { imageTotal: 0, completed: 0, textCount: 0 } as const
+const usageFallback = {
+  imageTotal: 0,
+  completed: 0,
+  textCount: 0,
+  freeTextCount: 0,
+  paidTextCount: 0,
+  hasPaidAccess: false,
+  paidBalance: 0,
+} as const
 
 type SectionMode = "text" | "image"
 
@@ -85,6 +99,10 @@ export default function MainPage() {
   )
   const usageResult = useQuery(api.images.getGenerationUsage, usageArgs)
   const usage = usageResult ?? usageFallback
+  const usageLoading = usageResult === undefined
+
+  const { checkout } = useCustomer()
+  const [isCheckoutPending, setIsCheckoutPending] = useState(false)
 
   const isRootRoute = location.pathname === "/"
   const preferredDefaultSection = sections.find(
@@ -126,6 +144,47 @@ export default function MainPage() {
       }
     }
   }, [])
+
+  const startMessageCheckout = async () => {
+    if (isCheckoutPending) {
+      return
+    }
+
+    if (!isAuthenticated) {
+      navigate("/auth")
+      return
+    }
+
+    setIsCheckoutPending(true)
+    try {
+      const successUrl =
+        typeof window !== "undefined"
+          ? `${window.location.origin}/pricing?success=messages`
+          : undefined
+
+      const result = await checkout({
+        productId: MESSAGE_TOP_UP_PRODUCT_ID,
+        dialog: CheckoutDialog,
+        successUrl,
+      })
+
+      if (result?.error) {
+        console.error("Autumn checkout failed", result.error)
+        toast.error({
+          title: "Checkout failed",
+          description: result.error.message ?? "Please try again.",
+        })
+      }
+    } catch (error) {
+      console.error("Failed to initiate checkout", error)
+      toast.error({
+        title: "Checkout unavailable",
+        description: "We couldn't start the upgrade flow. Please try again.",
+      })
+    } finally {
+      setIsCheckoutPending(false)
+    }
+  }
 
   const handleSectionClick = (section: Section) => {
     if (section.id === "writing") {
@@ -208,21 +267,40 @@ export default function MainPage() {
     }
 
     if (currentMode === "text") {
-      const limit = isAuthenticated
-        ? FREE_AUTH_GENERATIONS
-        : FREE_GUEST_GENERATIONS
-
       if (!isAuthenticated) {
         if (!clientId) {
           toast.info("Setting up your session, please try again.")
           return
         }
-      } else if (usage.textCount >= limit) {
-        toast.info({
-          title: "Free limit reached",
-          description: "You've used all free text messages. The limit resets in 1 day.",
-        })
-        return
+
+        if (usage.textCount >= FREE_GUEST_GENERATIONS) {
+          toast.info({
+            title: "Free limit reached",
+            description:
+              "You've used all free text messages. The limit resets in 1 day.",
+          })
+          return
+        }
+      } else {
+        const freeUsed = Math.min(
+          usage.freeTextCount ?? usage.textCount,
+          FREE_AUTH_GENERATIONS,
+        )
+        const hasFreeAllowance = freeUsed < FREE_AUTH_GENERATIONS
+        const hasPaidAllowance = usage.hasPaidAccess ?? false
+
+        if (!hasFreeAllowance && !hasPaidAllowance && !usageLoading) {
+          toast.info({
+            title: "Need more messages?",
+            description: `Purchase ${MESSAGE_TOP_UP_BUNDLE_SIZE.toLocaleString()} more messages for $${MESSAGE_TOP_UP_PRICE_USD}.`,
+            actionProps: {
+              onClick: () => startMessageCheckout(),
+              children: "Upgrade",
+              disabled: isCheckoutPending,
+            },
+          })
+          return
+        }
       }
     }
 
@@ -275,10 +353,22 @@ export default function MainPage() {
         )
 
         if (result.limitReached) {
-          toast.info({
-            title: "Create an account",
-            description: "Sign in to keep the conversation going.",
-          })
+          if (isAuthenticated) {
+            toast.info({
+              title: "Add more messages",
+              description: `Purchase ${MESSAGE_TOP_UP_BUNDLE_SIZE.toLocaleString()} more messages for $${MESSAGE_TOP_UP_PRICE_USD}.`,
+              actionProps: {
+                onClick: () => startMessageCheckout(),
+                children: "Upgrade",
+                disabled: isCheckoutPending,
+              },
+            })
+          } else {
+            toast.info({
+              title: "Create an account",
+              description: "Sign in to keep the conversation going.",
+            })
+          }
         } else if (result.isFallback) {
           toast.info(
             "Text generation is temporarily unavailable. Try again later.",
@@ -396,6 +486,13 @@ export default function MainPage() {
       <header className="border-b border-border/40 px-4 py-4">
         <div className="flex w-full items-center justify-end">
           <div className="flex items-center gap-2">
+            <Button
+              variant="ghost"
+              size="sm"
+              render={<Link to="/pricing" />}
+            >
+              Pricing
+            </Button>
             <Button
               variant="ghost"
               size="icon"

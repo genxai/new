@@ -6,6 +6,7 @@ import { ConvexReactClient } from "convex/react"
 import { ConvexBetterAuthProvider } from "@convex-dev/better-auth/react"
 import { ToastProvider } from "@/components/ui/toast"
 import { ThemeProvider } from "@/providers/theme-provider"
+import { AutumnWrapper } from "@/providers/autumn-provider"
 import { authClient } from "@/lib/auth-client"
 import { router } from "@/routes/router"
 
@@ -16,7 +17,9 @@ createRoot(document.getElementById("root")!).render(
     <ThemeProvider defaultTheme="system">
       <ToastProvider>
         <ConvexBetterAuthProvider client={convex} authClient={authClient}>
-          <RouterProvider router={router} />
+          <AutumnWrapper>
+            <RouterProvider router={router} />
+          </AutumnWrapper>
         </ConvexBetterAuthProvider>
       </ToastProvider>
     </ThemeProvider>

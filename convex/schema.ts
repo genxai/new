@@ -96,6 +96,8 @@ const schema = defineSchema({
     success: v.boolean(),
     fallback: v.optional(v.boolean()),
     error: v.optional(v.string()),
+    source: v.optional(v.union(v.literal("free"), v.literal("paid"))),
+    createdAt: v.optional(v.number()),
   }).index("by_user", ["userId"]),
 })
 

@@ -1,9 +1,10 @@
 import { v } from "convex/values"
+import { generateText } from "ai"
 import { query, mutation, action } from "./_generated/server"
 import { api } from "./_generated/api"
-import { generateText } from "ai"
 import type { Id } from "./_generated/dataModel"
 import { FREE_GENERATION_LIMITS } from "../shared/usage-limits"
+import { check, track } from "./autumn"
 
 type AiGenerateTextResult = Awaited<ReturnType<typeof generateText>>
 
@@ -11,6 +12,9 @@ const MAX_FREE_GENERATION_LIMIT = Math.max(
   FREE_GENERATION_LIMITS.anonymous,
   FREE_GENERATION_LIMITS.authenticated,
 )
+
+const AUTUMN_MESSAGES_FEATURE_ID = "messages"
+const AUTUMN_REQUIRED_BALANCE = 1
 
 export const generateImage = action({
   args: {
@@ -207,18 +211,25 @@ export const getGenerationUsage = query({
     clientId: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
-    const providedUserId = args.userId
-    const identity = providedUserId ? null : await ctx.auth.getUserIdentity()
-    const resolvedUserId = providedUserId
-      ? providedUserId
-      : identity?.subject
+    const providedUserId = args.userId ?? null
+    const identity = await ctx.auth.getUserIdentity()
+    const resolvedUserId =
+      providedUserId ??
+      (identity?.subject
         ? identity.subject
         : args.clientId
           ? `guest:${args.clientId}`
-          : null
+          : null)
 
     if (!resolvedUserId) {
-      return { imageTotal: 0, completed: 0, textCount: 0 }
+      return {
+        imageTotal: 0,
+        completed: 0,
+        textCount: 0,
+        freeTextCount: 0,
+        paidTextCount: 0,
+        hasPaidAccess: false,
+      }
     }
 
     const generations = await ctx.db
@@ -236,12 +247,54 @@ export const getGenerationUsage = query({
     const textInteractions = await ctx.db
       .query("textInteractions")
       .withIndex("by_user", (q) => q.eq("userId", resolvedUserId))
-      .take(MAX_FREE_GENERATION_LIMIT + 1)
+      .collect()
+
+    let freeTextCount = 0
+    let paidTextCount = 0
+
+    for (const interaction of textInteractions) {
+      const source = interaction.source ?? "free"
+      if (source === "paid") {
+        paidTextCount += 1
+      } else {
+        freeTextCount += 1
+      }
+    }
+
+    let paidBalance: number | undefined
+    let hasPaidAccess = false
+
+    if (identity && identity.subject === resolvedUserId) {
+      const checkResult = await check(ctx, {
+        featureId: AUTUMN_MESSAGES_FEATURE_ID,
+        requiredBalance: AUTUMN_REQUIRED_BALANCE,
+        sendEvent: false,
+      })
+
+      if (!checkResult.error && checkResult.data) {
+        hasPaidAccess = Boolean(checkResult.data.allowed)
+        const balanceValue = checkResult.data.balance
+        if (typeof balanceValue === "number") {
+          paidBalance = balanceValue
+        } else if (balanceValue !== undefined && balanceValue !== null) {
+          const numericBalance = Number(balanceValue)
+          if (!Number.isNaN(numericBalance)) {
+            paidBalance = numericBalance
+          }
+        }
+      } else if (checkResult.error) {
+        console.error("Autumn check failed during usage lookup", checkResult.error)
+      }
+    }
 
     return {
       imageTotal: generations.length,
       completed,
       textCount: textInteractions.length,
+      freeTextCount,
+      paidTextCount,
+      paidBalance,
+      hasPaidAccess,
     }
   },
 })
@@ -250,6 +303,10 @@ type GenerationUsageSummary = {
   imageTotal: number
   completed: number
   textCount: number
+  freeTextCount: number
+  paidTextCount: number
+  paidBalance?: number
+  hasPaidAccess?: boolean
 }
 
 type TextResponsePayload = {
@@ -260,7 +317,7 @@ type TextResponsePayload = {
 }
 
 const FALLBACK_LIMIT_MESSAGE =
-  "You've reached the free text limit. Sign in to keep the conversation going."
+  "You've reached the free message limit. Upgrade to unlock more messages."
 const FALLBACK_UNAVAILABLE_MESSAGE =
   "Text generation is temporarily unavailable. Please try again later."
 
@@ -287,12 +344,37 @@ export const generateTextResponse = action({
       clientId: args.clientId,
     })) as GenerationUsageSummary
 
-    const limit = isAuthenticated
-      ? FREE_GENERATION_LIMITS.authenticated
-      : FREE_GENERATION_LIMITS.anonymous
+    const freeTextCount =
+      textUsage.freeTextCount ??
+      Math.min(textUsage.textCount, FREE_GENERATION_LIMITS.authenticated)
 
-    const limitReached = textUsage.textCount >= limit
-    const shouldEnforceLimit = isAuthenticated && limitReached
+    const hasFreeQuota = isAuthenticated
+      ? freeTextCount < FREE_GENERATION_LIMITS.authenticated
+      : textUsage.textCount < FREE_GENERATION_LIMITS.anonymous
+
+    let hasPaidQuota = Boolean(
+      isAuthenticated &&
+        !hasFreeQuota &&
+        (textUsage.hasPaidAccess ?? false),
+    )
+
+    if (isAuthenticated && !hasFreeQuota && textUsage.hasPaidAccess === undefined) {
+      const checkResult = await check(ctx, {
+        featureId: AUTUMN_MESSAGES_FEATURE_ID,
+        requiredBalance: AUTUMN_REQUIRED_BALANCE,
+        sendEvent: false,
+      })
+
+      if (!checkResult.error && checkResult.data?.allowed) {
+        hasPaidQuota = true
+      } else if (checkResult.error) {
+        console.error("Autumn check failed during text generation", checkResult.error)
+      }
+    }
+
+    const willUsePaidCredit = isAuthenticated && !hasFreeQuota && hasPaidQuota
+    const shouldEnforceLimit = !hasFreeQuota && !hasPaidQuota
+    const limitReached = shouldEnforceLimit
 
     let result: AiGenerateTextResult | null = null
     let text = ""
@@ -337,9 +419,22 @@ export const generateTextResponse = action({
         success,
         fallback: isFallback ? true : undefined,
         error: success ? undefined : errorMessage,
+        source: willUsePaidCredit ? "paid" : "free",
+        createdAt: Date.now(),
       })
     } catch (logError) {
       console.error("Failed to log text interaction", logError)
+    }
+
+    if (success && willUsePaidCredit) {
+      const trackResult = await track(ctx, {
+        featureId: AUTUMN_MESSAGES_FEATURE_ID,
+        value: 1,
+      })
+
+      if (trackResult.error) {
+        console.error("Failed to track Autumn usage", trackResult.error)
+      }
     }
 
     return {
@@ -358,6 +453,8 @@ export const logTextInteraction = mutation({
     success: v.boolean(),
     fallback: v.optional(v.boolean()),
     error: v.optional(v.string()),
+    source: v.optional(v.union(v.literal("free"), v.literal("paid"))),
+    createdAt: v.optional(v.number()),
   },
   handler: async (ctx, args) => {
     await ctx.db.insert("textInteractions", {
@@ -366,6 +463,8 @@ export const logTextInteraction = mutation({
       success: args.success,
       fallback: args.fallback,
       error: args.error,
+      source: args.source ?? "free",
+      createdAt: args.createdAt ?? Date.now(),
     })
   },
 })
