@@ -221,9 +221,15 @@ export const sendOTPVerification = async (
     type: "otpVerification",
     template: <VerifyOTP code={code} brand={mail.brand} />,
   })
-  if (mail.preview) {
-    console.log(`OTP CODE: ${code}`)
-  }
+
+  console.log(`OTP CODE: ${code}`)
+
+  const redactedRecipient = to.includes("@")
+    ? `${to.split("@")[0]}@***`
+    : to
+  console.info(
+    `[auth][otp] Dispatched sign-in code for ${redactedRecipient}`,
+  )
 }
 
 export const sendMagicLink = async (
