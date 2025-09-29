@@ -394,7 +394,7 @@ export default function MainPage() {
   return (
     <div className="h-dvh bg-background text-foreground flex flex-col">
       <header className="border-b border-border/40 px-4 py-4">
-        <div className="mx-auto flex w-full max-w-5xl items-center justify-end">
+        <div className="flex w-full items-center justify-end">
           <div className="flex items-center gap-2">
             <Button
               variant="ghost"
