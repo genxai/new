@@ -8,6 +8,7 @@ import TermsPage from "@/routes/pages/TermsPage"
 import PrivacyPage from "@/routes/pages/PrivacyPage"
 import LandingPage from "@/routes/pages/LandingPage"
 import MainPage from "@/routes/pages/MainPage"
+import PricingPage from "@/routes/pages/PricingPage"
 import { Protected } from "@/routes/guards"
 import WorkspaceShell from "@/routes/layouts/WorkspaceShell"
 import RouteErrorBoundary from "@/routes/RouteErrorBoundary"
@@ -20,6 +21,10 @@ const baseRoutes: RouteObject[] = [
   {
     path: "/landing",
     Component: LandingPage,
+  },
+  {
+    path: "/pricing",
+    Component: PricingPage,
   },
   {
     path: "/auth",

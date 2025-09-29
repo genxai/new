@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState, type ReactNode } from "react"
-import { Link } from "react-router-dom"
+import { Link, useNavigate } from "react-router-dom"
 import { useAction, useConvexAuth, useQuery } from "convex/react"
 import { Github, Image as ImageIcon, Sparkles, UserRound } from "lucide-react"
 import { Streamdown } from "streamdown"
@@ -86,6 +86,7 @@ export default function LandingPage() {
   const [guestTextCount, setGuestTextCount] = useState(0)
   const [mode, setMode] = useState<"text" | "image">("text")
   const [messages, setMessages] = useState<ChatMessage[]>([])
+  const navigate = useNavigate()
   const { isAuthenticated, isLoading } = useConvexAuth()
   const generateImage = useAction(api.images.generateImage)
   const generateTextResponse = useAction(api.images.generateTextResponse)
@@ -96,7 +97,17 @@ export default function LandingPage() {
   )
   const usageResult = useQuery(api.images.getGenerationUsage, usageArgs)
   const usage =
-    usageResult ?? ({ imageTotal: 0, completed: 0, textCount: 0 } as const)
+    usageResult ??
+    ({
+      imageTotal: 0,
+      completed: 0,
+      textCount: 0,
+      freeTextCount: 0,
+      paidTextCount: 0,
+      hasPaidAccess: false,
+      paidBalance: 0,
+    } as const)
+  const usageLoading = usageResult === undefined
 
   useEffect(() => {
     if (typeof window === "undefined") {
@@ -150,22 +161,39 @@ export default function LandingPage() {
       }
     }
     if (mode === "text") {
-      const limit = isAuthenticated
-        ? FREE_AUTH_GENERATIONS
-        : FREE_GUEST_GENERATIONS
-
       if (!isAuthenticated) {
         if (!clientId) {
           toast.info("Setting up your session, please try again.")
           return
         }
-      } else if (usage.textCount >= limit) {
-        toast.info({
-          title: "Free limit reached",
-          description:
-            "You've used all free text messages. The limit resets in 1 day.",
-        })
-        return
+
+        if (usage.textCount >= FREE_GUEST_GENERATIONS) {
+          toast.info({
+            title: "Free limit reached",
+            description:
+              "You've used all free text messages. The limit resets in 1 day.",
+          })
+          return
+        }
+      } else {
+        const freeUsed = Math.min(
+          usage.freeTextCount ?? usage.textCount,
+          FREE_AUTH_GENERATIONS,
+        )
+        const hasFreeAllowance = freeUsed < FREE_AUTH_GENERATIONS
+        const hasPaidAllowance = usage.hasPaidAccess ?? false
+
+        if (!hasFreeAllowance && !hasPaidAllowance && !usageLoading) {
+          toast.info({
+            title: "Need more messages?",
+            description: "Visit the pricing page to top up your messages.",
+            actionProps: {
+              onClick: () => navigate("/pricing"),
+              children: "View pricing",
+            },
+          })
+          return
+        }
       }
     }
 
@@ -209,10 +237,21 @@ export default function LandingPage() {
         )
 
         if (result.limitReached) {
-          toast.info({
-            title: "Create an account",
-            description: "Sign in to keep the conversation going.",
-          })
+          if (isAuthenticated) {
+            toast.info({
+              title: "Add more messages",
+              description: "Visit the pricing page to top up your messages.",
+              actionProps: {
+                onClick: () => navigate("/pricing"),
+                children: "View pricing",
+              },
+            })
+          } else {
+            toast.info({
+              title: "Create an account",
+              description: "Sign in to keep the conversation going.",
+            })
+          }
         } else if (result.isFallback) {
           toast.info(
             "Text generation is temporarily unavailable. Try again later.",
