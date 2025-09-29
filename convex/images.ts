@@ -39,7 +39,9 @@ export const generateImage = action({
       ? FREE_GENERATION_LIMITS.authenticated
       : FREE_GENERATION_LIMITS.anonymous
 
-    if (usage.imageTotal >= limit) {
+    const limitReached = usage.imageTotal >= limit
+
+    if (isAuthenticated && limitReached) {
       throw new Error("Free generation limit reached")
     }
 

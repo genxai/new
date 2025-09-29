@@ -194,21 +194,12 @@ export default function MainPage() {
     }
 
     if (currentMode === "image") {
-      if (!isAuthenticated) {
-        if (!clientId) {
-          toast.info("Setting up your session, please try again.")
-          return
-        }
+      if (!isAuthenticated && !clientId) {
+        toast.info("Setting up your session, please try again.")
+        return
+      }
 
-        if (guestGenerationCount >= FREE_GUEST_GENERATIONS) {
-          toast.info({
-            title: "Create an account",
-            description: "Sign in to keep generating new images.",
-          })
-          navigate("/auth")
-          return
-        }
-      } else if (usage.imageTotal >= FREE_AUTH_GENERATIONS) {
+      if (isAuthenticated && usage.imageTotal >= FREE_AUTH_GENERATIONS) {
         toast.info({
           title: "Free limit reached",
           description: "You've used all free images. The limit resets in 1 day.",

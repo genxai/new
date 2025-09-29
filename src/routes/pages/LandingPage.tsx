@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState, type ReactNode } from "react"
-import { useNavigate, Link } from "react-router-dom"
+import { Link } from "react-router-dom"
 import { useAction, useConvexAuth, useQuery } from "convex/react"
 import { Github, Image as ImageIcon, Sparkles, UserRound } from "lucide-react"
 import { Streamdown } from "streamdown"
@@ -88,7 +88,6 @@ export default function LandingPage() {
   const [guestTextCount, setGuestTextCount] = useState(0)
   const [mode, setMode] = useState<"text" | "image">("text")
   const [messages, setMessages] = useState<ChatMessage[]>([])
-  const navigate = useNavigate()
   const { isAuthenticated, isLoading } = useConvexAuth()
   const generateImage = useAction(api.images.generateImage)
   const generateTextResponse = useAction(api.images.generateTextResponse)
@@ -138,21 +137,12 @@ export default function LandingPage() {
     }
 
     if (mode === "image") {
-      if (!isAuthenticated) {
-        if (!clientId) {
-          toast.info("Setting up your session, please try again.")
-          return
-        }
+      if (!isAuthenticated && !clientId) {
+        toast.info("Setting up your session, please try again.")
+        return
+      }
 
-        if (guestGenerationCount >= FREE_GUEST_GENERATIONS) {
-          toast.info({
-            title: "Create an account",
-            description: "Sign in to keep generating new images.",
-          })
-          navigate("/auth")
-          return
-        }
-      } else if (usage.imageTotal >= FREE_AUTH_GENERATIONS) {
+      if (isAuthenticated && usage.imageTotal >= FREE_AUTH_GENERATIONS) {
         toast.info({
           title: "Free limit reached",
           description:
@@ -304,12 +294,6 @@ export default function LandingPage() {
           ),
         )
 
-        if (
-          !isAuthenticated &&
-          errorMessage.includes("Free generation limit")
-        ) {
-          navigate("/auth")
-        }
       } else {
         setMessages((prev) =>
           prev.map((entry) =>
