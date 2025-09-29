@@ -21,14 +21,14 @@ export function ThemeToggle() {
   return (
     <Button
       type="button"
-      variant="ghost"
-      size="icon"
+      variant="simpleButton"
+      size="sm"
       onClick={handleToggle}
       aria-label={nextLabel}
     >
       <Moon className="size-4 dark:hidden" aria-hidden />
       <Sun className="hidden size-4 dark:block" aria-hidden />
-      <span className="sr-only">Toggle theme</span>
+      <span>Theme</span>
     </Button>
   )
 }

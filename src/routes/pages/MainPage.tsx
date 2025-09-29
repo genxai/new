@@ -8,6 +8,7 @@ import {
 } from "react"
 import { Link, useLocation, useNavigate } from "react-router-dom"
 import { useAction, useConvexAuth, useQuery } from "convex/react"
+import LogoIcon from "@/components/ui/logo-icon"
 import SettingsIcon from "@/components/ui/settings-icon"
 import PlusIcon from "@/components/ui/plus-icon"
 import { Button } from "@/components/ui/button"
@@ -66,12 +67,18 @@ type ChatMessage =
 type SectionStateMap<T> = Record<string, T>
 
 export default function MainPage() {
-  const [promptBySection, setPromptBySection] = useState<SectionStateMap<string>>({})
-  const [messagesBySection, setMessagesBySection] = useState<SectionStateMap<ChatMessage[]>>({})
-  const [isGeneratingBySection, setIsGeneratingBySection] =
-    useState<SectionStateMap<boolean>>({})
+  const [promptBySection, setPromptBySection] = useState<
+    SectionStateMap<string>
+  >({})
+  const [messagesBySection, setMessagesBySection] = useState<
+    SectionStateMap<ChatMessage[]>
+  >({})
+  const [isGeneratingBySection, setIsGeneratingBySection] = useState<
+    SectionStateMap<boolean>
+  >({})
   const [guestGenerationCount, setGuestGenerationCount] = useState(0)
   const [guestTextCount, setGuestTextCount] = useState(0)
+  const [isMenuOpen, setIsMenuOpen] = useState(false)
 
   const location = useLocation()
   const navigate = useNavigate()
@@ -96,7 +103,9 @@ export default function MainPage() {
         ? section.id === "writing"
         : location.pathname.startsWith(section.route),
     ) ||
-    (isRootRoute && preferredDefaultSection ? preferredDefaultSection : sections[0])
+    (isRootRoute && preferredDefaultSection
+      ? preferredDefaultSection
+      : sections[0])
   const mode = supportedModes[activeSection.id] ?? null
 
   const prompt = promptBySection[activeSection.id] ?? ""
@@ -126,6 +135,23 @@ export default function MainPage() {
       }
     }
   }, [])
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      const target = event.target as HTMLElement
+      if (!target.closest("[data-menu-container]")) {
+        setIsMenuOpen(false)
+      }
+    }
+
+    if (isMenuOpen) {
+      document.addEventListener("click", handleClickOutside)
+    }
+
+    return () => {
+      document.removeEventListener("click", handleClickOutside)
+    }
+  }, [isMenuOpen])
 
   const handleSectionClick = (section: Section) => {
     if (section.id === "writing") {
@@ -201,7 +227,8 @@ export default function MainPage() {
       if (isAuthenticated && usage.imageTotal >= FREE_AUTH_GENERATIONS) {
         toast.info({
           title: "Free limit reached",
-          description: "You've used all free images. The limit resets in 1 day.",
+          description:
+            "You've used all free images. The limit resets in 1 day.",
         })
         return
       }
@@ -220,7 +247,8 @@ export default function MainPage() {
       } else if (usage.textCount >= limit) {
         toast.info({
           title: "Free limit reached",
-          description: "You've used all free text messages. The limit resets in 1 day.",
+          description:
+            "You've used all free text messages. The limit resets in 1 day.",
         })
         return
       }
@@ -362,7 +390,6 @@ export default function MainPage() {
             : entry,
         ),
       )
-
     } finally {
       setSectionGenerating(sectionId, false)
     }
@@ -370,55 +397,29 @@ export default function MainPage() {
     resetPrompt(sectionId)
   }
 
-  const promptPlaceholder = mode === "image"
-    ? "Background of soft, abstract gradient pastels"
-    : mode === "text"
-      ? "Ask anything in chat"
-      : "Coming soon"
+  const promptPlaceholder =
+    mode === "image"
+      ? "Background of soft, abstract gradient pastels"
+      : mode === "text"
+        ? "Ask anything in chat"
+        : "Coming soon"
 
-  const generateLabel = mode === "image"
-    ? isGenerating
-      ? "Generating…"
-      : "Generate"
-    : mode === "text"
+  const generateLabel =
+    mode === "image"
       ? isGenerating
-        ? "Thinking…"
-        : "Send"
-      : "Coming soon"
+        ? "Generating…"
+        : "Generate"
+      : mode === "text"
+        ? isGenerating
+          ? "Thinking…"
+          : "Send"
+        : "Coming soon"
 
   const isGenerateDisabled =
-    !mode ||
-    isGenerating ||
-    (mode === "image" && !isAuthenticated && !clientId)
+    !mode || isGenerating || (mode === "image" && !isAuthenticated && !clientId)
 
   return (
     <div className="h-dvh bg-background text-foreground flex flex-col">
-      <header className="border-b border-border/40 px-4 py-4">
-        <div className="flex w-full items-center justify-end">
-          <div className="flex items-center gap-2">
-            <Button
-              variant="ghost"
-              size="icon"
-              aria-label="Open gen.new GitHub repository"
-              render={({ children, ...props }) => (
-                <a
-                  {...props}
-                  href="https://github.com/genxai/new"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                >
-                  {children}
-                  <span className="sr-only">Open gen.new GitHub repository</span>
-                </a>
-              )}
-            >
-              <Github className="size-5" aria-hidden />
-            </Button>
-            <ThemeToggle />
-            <AuthAction isAuthenticated={isAuthenticated} isLoading={isLoading} />
-          </div>
-        </div>
-      </header>
       <main className="flex-1 flex flex-col items-center justify-between px-4 py-10">
         <div className="w-full max-w-2xl space-y-6">
           <div className="flex text-xl font-extralight justify-center gap-2 mx-auto items-center h-10">
@@ -486,10 +487,20 @@ export default function MainPage() {
             />
 
             <div className="absolute right-3 bottom-3 flex items-center gap-4">
-              <Button variant="icon" size="md" className="h-8 w-8 rounded-full" type="button">
+              <Button
+                variant="icon"
+                size="md"
+                className="h-8 w-8 rounded-full"
+                type="button"
+              >
                 <PlusIcon />
               </Button>
-              <Button variant="icon" size="md" className="h-8 w-8 rounded-full" type="button">
+              <Button
+                variant="icon"
+                size="md"
+                className="h-8 w-8 rounded-full"
+                type="button"
+              >
                 <SettingsIcon />
               </Button>
               <Button
@@ -516,8 +527,54 @@ export default function MainPage() {
         </div>
       </main>
 
-      <nav className="border-t border-border/40 px-4 py-4">
-        <div className="flex items-center justify-center gap-8">
+      <nav className="w-[calc(100%-2%)] mx-auto px-4 py-4 flex items-center gap-2">
+        <div className="relative" data-menu-container>
+          <Button
+            variant="simpleButton"
+            size="xl"
+            onClick={() => setIsMenuOpen(!isMenuOpen)}
+          >
+            <LogoIcon style={{ width: "30px", height: "30px" }} />
+          </Button>
+
+          {isMenuOpen && (
+            <div className="absolute bottom-full left-0 mb-4 bg-background border border-border/40 rounded-xl shadow-lg py-3 px-3">
+              <div className="flex flex-col items-center gap-6">
+                <Button
+                  variant="simpleButton"
+                  size="sm"
+                  className="flex items-center gap-2"
+                >
+                  <ThemeToggle />
+                </Button>
+
+                <Button
+                  variant="simpleButton"
+                  size="sm"
+                  aria-label="Open gen.new GitHub repository"
+                  render={({ children, ...props }) => (
+                    <a
+                      {...props}
+                      href="https://github.com/genxai/new"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
+                      {children}
+                      <Github className="size-4" aria-hidden />
+                      GitHub
+                    </a>
+                  )}
+                />
+                <AuthAction
+                  isAuthenticated={isAuthenticated}
+                  isLoading={isLoading}
+                />
+              </div>
+            </div>
+          )}
+        </div>
+
+        <div className="flex-1 flex items-center justify-center gap-8">
           {sections.map((section) => {
             const Icon = section.icon
             const isActive = activeSection.id === section.id
@@ -558,6 +615,7 @@ export default function MainPage() {
             )
           })}
         </div>
+        <div className="w-5"></div>
       </nav>
     </div>
   )
@@ -578,21 +636,17 @@ function AuthAction({ isAuthenticated, isLoading }: AuthActionProps) {
       <Button
         render={<Link to="/settings" />}
         variant="ghost"
-        size="icon"
+        size="sm"
         aria-label="Open settings"
       >
-        <UserRound className="size-5" aria-hidden />
+        <UserRound className="size-4" aria-hidden />
+        Profile
       </Button>
     )
   }
 
   return (
-    <Button
-      render={<Link to="/auth" />}
-      variant="signin"
-      size="lg"
-      className="px-5"
-    >
+    <Button render={<Link to="/auth" />} variant="simpleButton" size="sm">
       <UserRound className="size-4" aria-hidden />
       Sign in
     </Button>
@@ -603,7 +657,9 @@ function EmptyState({ mode }: { mode: SectionMode | null }) {
   if (!mode) {
     return (
       <div className="flex h-full w-full flex-col items-center justify-center text-center gap-3 text-muted-foreground">
-        <span className="text-sm font-medium">This generator is coming soon.</span>
+        <span className="text-sm font-medium">
+          This generator is coming soon.
+        </span>
       </div>
     )
   }
@@ -676,7 +732,9 @@ function ChatBubble({ message }: { message: ChatMessage }) {
   const bubbleClass = `max-w-[80%] rounded-2xl px-4 py-3 text-sm leading-relaxed ${isUser ? "bg-primary text-primary-foreground" : "bg-muted text-foreground"}`
   const bubbleProps =
     message.role === "assistant" && message.type === "text"
-      ? ({ "aria-live": message.status === "completed" ? "off" : "polite" } as const)
+      ? ({
+          "aria-live": message.status === "completed" ? "off" : "polite",
+        } as const)
       : undefined
 
   let content: ReactNode
