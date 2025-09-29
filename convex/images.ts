@@ -5,6 +5,8 @@ import { generateText } from "ai"
 import type { Id } from "./_generated/dataModel"
 import { FREE_GENERATION_LIMITS } from "../shared/usage-limits"
 
+type AiGenerateTextResult = Awaited<ReturnType<typeof generateText>>
+
 const MAX_FREE_GENERATION_LIMIT = Math.max(
   FREE_GENERATION_LIMITS.anonymous,
   FREE_GENERATION_LIMITS.authenticated,
@@ -242,13 +244,32 @@ export const getGenerationUsage = query({
   },
 })
 
+type GenerationUsageSummary = {
+  imageTotal: number
+  completed: number
+  textCount: number
+}
+
+type TextResponsePayload = {
+  success: boolean
+  text: string
+  isFallback: boolean
+  limitReached: boolean
+}
+
+const FALLBACK_LIMIT_MESSAGE =
+  "You've reached the free text limit. Sign in to keep the conversation going."
+const FALLBACK_UNAVAILABLE_MESSAGE =
+  "Text generation is temporarily unavailable. Please try again later."
+
 export const generateTextResponse = action({
   args: {
     prompt: v.string(),
     clientId: v.optional(v.string()),
   },
-  handler: async (ctx, args) => {
+  handler: async (ctx, args): Promise<TextResponsePayload> => {
     const identity = await ctx.auth.getUserIdentity()
+    const isAuthenticated = Boolean(identity)
     const userId = identity?.subject
       ? identity.subject
       : args.clientId
@@ -259,45 +280,50 @@ export const generateTextResponse = action({
       throw new Error("Missing client identifier for guest session")
     }
 
-    const textUsage = await ctx.runQuery(api.images.getGenerationUsage, {
+    const textUsage = (await ctx.runQuery(api.images.getGenerationUsage, {
       userId,
       clientId: args.clientId,
-    })
+    })) as GenerationUsageSummary
 
-    const limit = identity
+    const limit = isAuthenticated
       ? FREE_GENERATION_LIMITS.authenticated
       : FREE_GENERATION_LIMITS.anonymous
 
-    if (textUsage.textCount >= limit) {
-      throw new Error("Free text generation limit reached")
-    }
+    const limitReached = textUsage.textCount >= limit
+    const shouldEnforceLimit = isAuthenticated && limitReached
 
-    let result
-    let text: string | null = null
+    let result: AiGenerateTextResult | null = null
+    let text = ""
     let isFallback = false
     let errorMessage: string | undefined
-    try {
-      result = await generateText({
-        model: "google/gemini-2.0-flash",
-        providerOptions: {
-          google: {},
-        },
-        prompt: args.prompt,
-      })
-      text = result.text?.trim() ?? null
-    } catch (error) {
-      console.error("Text generation request failed", error)
-      errorMessage = error instanceof Error ? error.message : "Unknown error"
-      text = null
-    }
 
-    if (!text) {
-      isFallback = true
-      if (!errorMessage) {
-        errorMessage = "Model returned no text"
+    if (!shouldEnforceLimit) {
+      try {
+        result = await generateText({
+          model: "google/gemini-2.0-flash",
+          providerOptions: {
+            google: {},
+          },
+          prompt: args.prompt,
+        })
+        text = result.text?.trim() ?? ""
+      } catch (error) {
+        console.error("Text generation request failed", error)
+        errorMessage = error instanceof Error ? error.message : "Unknown error"
+        text = ""
       }
-      text =
-        "Text generation is temporarily unavailable. Please try again later."
+
+      if (!text) {
+        isFallback = true
+        if (!errorMessage) {
+          errorMessage = "Model returned no text"
+        }
+        text = FALLBACK_UNAVAILABLE_MESSAGE
+      }
+    } else {
+      isFallback = true
+      errorMessage = "Free text generation limit reached"
+      text = FALLBACK_LIMIT_MESSAGE
     }
 
     const success = !isFallback
@@ -318,6 +344,7 @@ export const generateTextResponse = action({
       success,
       text,
       isFallback,
+      limitReached,
     }
   },
 })

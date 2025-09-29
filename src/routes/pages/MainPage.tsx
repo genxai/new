@@ -227,15 +227,6 @@ export default function MainPage() {
           toast.info("Setting up your session, please try again.")
           return
         }
-
-        if (guestTextCount >= limit) {
-          toast.info({
-            title: "Create an account",
-            description: "Sign in to keep the conversation going.",
-          })
-          navigate("/auth")
-          return
-        }
       } else if (usage.textCount >= limit) {
         toast.info({
           title: "Free limit reached",
@@ -293,13 +284,18 @@ export default function MainPage() {
           ),
         )
 
-        if (result.isFallback) {
+        if (result.limitReached) {
+          toast.info({
+            title: "Create an account",
+            description: "Sign in to keep the conversation going.",
+          })
+        } else if (result.isFallback) {
           toast.info(
             "Text generation is temporarily unavailable. Try again later.",
           )
         }
 
-        if (!isAuthenticated) {
+        if (!isAuthenticated && !result.limitReached) {
           const nextTextCount = guestTextCount + 1
           setGuestTextCount(nextTextCount)
           if (typeof window !== "undefined") {
@@ -377,13 +373,6 @@ export default function MainPage() {
         ),
       )
 
-      if (
-        !isAuthenticated &&
-        (errorMessage.includes("Free text generation limit") ||
-          errorMessage.includes("Free generation limit"))
-      ) {
-        navigate("/auth")
-      }
     } finally {
       setSectionGenerating(sectionId, false)
     }
