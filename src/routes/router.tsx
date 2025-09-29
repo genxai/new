@@ -10,6 +10,7 @@ import LandingPage from "@/routes/pages/LandingPage"
 import { Protected } from "@/routes/guards"
 import WorkspaceShell from "@/routes/layouts/WorkspaceShell"
 import RouteErrorBoundary from "@/routes/RouteErrorBoundary"
+import FeedbackPage from "./pages/FeedbackPage"
 
 const baseRoutes: RouteObject[] = [
   {
@@ -45,6 +46,10 @@ const baseRoutes: RouteObject[] = [
       Component: (await import("@/routes/pages/VerificationSuccessPage"))
         .default,
     }),
+  },
+  {
+    path: "/feedback",
+    Component: FeedbackPage,
   },
   {
     path: "/settings",
