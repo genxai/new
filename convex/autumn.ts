@@ -1,7 +1,9 @@
 import { components } from "./_generated/api"
 import { Autumn } from "@useautumn/convex"
 
-export const autumn = new Autumn(components.autumn, {
+const autumnComponent = ((components as any)?.autumn ?? {}) as any
+
+export const autumn = new Autumn(autumnComponent, {
   secretKey: process.env.AUTUMN_SECRET_KEY ?? "",
   identify: async (ctx: any) => {
     const user = await ctx.auth.getUserIdentity()

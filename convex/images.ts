@@ -4,7 +4,7 @@ import { query, mutation, action } from "./_generated/server"
 import { api } from "./_generated/api"
 import type { Id } from "./_generated/dataModel"
 import { FREE_GENERATION_LIMITS } from "../shared/usage-limits"
-import { check, track } from "./autumn"
+import { autumn } from "./autumn"
 
 type AiGenerateTextResult = Awaited<ReturnType<typeof generateText>>
 
@@ -265,7 +265,7 @@ export const getGenerationUsage = query({
     let hasPaidAccess = false
 
     if (identity && identity.subject === resolvedUserId) {
-      const checkResult = await check(ctx, {
+      const checkResult = await autumn.check(ctx, {
         featureId: AUTUMN_MESSAGES_FEATURE_ID,
         requiredBalance: AUTUMN_REQUIRED_BALANCE,
         sendEvent: false,
@@ -359,7 +359,7 @@ export const generateTextResponse = action({
     )
 
     if (isAuthenticated && !hasFreeQuota && textUsage.hasPaidAccess === undefined) {
-      const checkResult = await check(ctx, {
+      const checkResult = await autumn.check(ctx, {
         featureId: AUTUMN_MESSAGES_FEATURE_ID,
         requiredBalance: AUTUMN_REQUIRED_BALANCE,
         sendEvent: false,
@@ -427,7 +427,7 @@ export const generateTextResponse = action({
     }
 
     if (success && willUsePaidCredit) {
-      const trackResult = await track(ctx, {
+      const trackResult = await autumn.track(ctx, {
         featureId: AUTUMN_MESSAGES_FEATURE_ID,
         value: 1,
       })
