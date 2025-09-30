@@ -10,12 +10,19 @@ import LandingPage from "@/routes/pages/LandingPage"
 import MainPage from "@/routes/pages/MainPage"
 import { Protected } from "@/routes/guards"
 import WorkspaceShell from "@/routes/layouts/WorkspaceShell"
+import MainLayout from "@/routes/layouts/MainLayout"
 import RouteErrorBoundary from "@/routes/RouteErrorBoundary"
 
 const baseRoutes: RouteObject[] = [
   {
     path: "/",
-    Component: MainPage,
+    Component: MainLayout,
+    children: [
+      {
+        index: true,
+        Component: MainPage,
+      },
+    ],
   },
   {
     path: "/landing",
@@ -85,23 +92,53 @@ const baseRoutes: RouteObject[] = [
   },
   {
     path: "/image",
-    Component: MainPage,
+    Component: MainLayout,
+    children: [
+      {
+        index: true,
+        Component: MainPage,
+      },
+    ],
   },
   {
     path: "/video",
-    Component: MainPage,
+    Component: MainLayout,
+    children: [
+      {
+        index: true,
+        Component: MainPage,
+      },
+    ],
   },
   {
     path: "/audio",
-    Component: MainPage,
+    Component: MainLayout,
+    children: [
+      {
+        index: true,
+        Component: MainPage,
+      },
+    ],
   },
   {
     path: "/writing",
-    Component: MainPage,
+    Component: MainLayout,
+    children: [
+      {
+        index: true,
+        Component: MainPage,
+      },
+    ],
   },
   {
     path: "/code",
-    Component: MainPage,
+    Component: MainLayout,
+    children: [
+      {
+        index: true,
+        Component: MainPage,
+      },
+    ],
   },
   {
     path: "*",

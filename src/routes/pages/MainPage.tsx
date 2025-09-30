@@ -6,20 +6,18 @@ import {
   type FormEvent,
   type ReactNode,
 } from "react"
-import { Link, useLocation, useNavigate } from "react-router-dom"
+import { useLocation } from "react-router-dom"
 import { useAction, useConvexAuth, useQuery } from "convex/react"
-import LogoIcon from "@/components/ui/logo-icon"
 import SettingsIcon from "@/components/ui/settings-icon"
 import PlusIcon from "@/components/ui/plus-icon"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { ThemeToggle } from "@/components/theme-toggle"
 import { sections, getColorFromGradient, type Section } from "@/data/sections"
 import { toast } from "@/lib/toast"
 import { useClientId } from "@/hooks/useClientId"
 import { FREE_GENERATION_LIMITS } from "@/shared/usage-limits"
 import { api } from "../../../convex/_generated/api"
-import { Loader2, Github, UserRound } from "lucide-react"
+import { Loader2 } from "lucide-react"
 import { Streamdown } from "streamdown"
 import Sparkle from "@/components/ui/sparkle"
 
@@ -79,11 +77,9 @@ export default function MainPage() {
   >({})
   const [guestGenerationCount, setGuestGenerationCount] = useState(0)
   const [guestTextCount, setGuestTextCount] = useState(0)
-  const [isMenuOpen, setIsMenuOpen] = useState(false)
 
   const location = useLocation()
-  const navigate = useNavigate()
-  const { isAuthenticated, isLoading } = useConvexAuth()
+  const { isAuthenticated } = useConvexAuth()
   const generateImage = useAction(api.images.generateImage)
   const generateTextResponse = useAction(api.images.generateTextResponse)
   const clientId = useClientId()
@@ -136,32 +132,6 @@ export default function MainPage() {
       }
     }
   }, [])
-
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      const target = event.target as HTMLElement
-      if (!target.closest("[data-menu-container]")) {
-        setIsMenuOpen(false)
-      }
-    }
-
-    if (isMenuOpen) {
-      document.addEventListener("click", handleClickOutside)
-    }
-
-    return () => {
-      document.removeEventListener("click", handleClickOutside)
-    }
-  }, [isMenuOpen])
-
-  const handleSectionClick = (section: Section) => {
-    if (section.id === "writing") {
-      navigate("/")
-      return
-    }
-
-    navigate(section.route)
-  }
 
   const handlePromptChange = (event: ChangeEvent<HTMLInputElement>) => {
     const sectionId = activeSection.id
@@ -419,361 +389,232 @@ export default function MainPage() {
   const isGenerateDisabled =
     !mode || isGenerating || (mode === "image" && !isAuthenticated && !clientId)
 
-  return (
-    <div className="h-dvh bg-background text-foreground flex flex-col">
-      <main className="flex-1 flex flex-col min-h-0">
-        {messages.length === 0 ? (
-          <div className="flex-1 flex flex-col gap-4 items-center justify-center px-4">
-            <div className="w-full max-w-2xl">
-              <div className="flex text-xl font-extralight justify-center gap-2 mx-auto items-center h-10">
-                <span
-                  className="scale-y-85 font-[500] bg-clip-text text-transparent flex items-center"
-                  style={{
-                    backgroundImage: `linear-gradient(to right, ${activeSection.color.replace(" ", ", ")})`,
-                    WebkitBackgroundClip: "text",
-                    backgroundClip: "text",
-                  }}
-                >
-                  gen
-                </span>
-                <span className="text-foreground/80 flex items-center scale-y-85">
-                  a
-                </span>
-
-                <div className="flex items-baseline">
-                  <Sparkle
-                    style={{
-                      width: "10px",
-                      height: "10px",
-                      color: getColorFromGradient(activeSection.color),
-                    }}
-                  />
-                  <span
-                    className="scale-y-85 font-[500] bg-clip-text text-transparent flex items-baseline"
-                    style={{
-                      backgroundImage: `linear-gradient(to right, ${activeSection.color.replace(" ", ", ")})`,
-                      WebkitBackgroundClip: "text",
-                      backgroundClip: "text",
-                    }}
-                  >
-                    new
-                  </span>
-                </div>
-
-                <span className="text-foreground/80 flex items-center scale-y-85">
-                  {activeSection.genName.toLowerCase()}
-                </span>
-              </div>
-              <EmptyState mode={mode} />
-            </div>
-            <div className="w-full max-w-2xl mt-8">
-              <form
-                onSubmit={handleSubmit}
-                className="relative"
-                onClick={(event) => {
-                  const target = event.target as HTMLElement
-                  if (target.closest("input,textarea,button")) {
-                    return
-                  }
-                  const input = event.currentTarget.querySelector(
-                    "textarea, input",
-                  ) as HTMLTextAreaElement | HTMLInputElement | null
-                  input?.focus()
-                }}
-              >
-                <Input
-                  multiline
-                  minRows={1}
-                  maxRows={6}
-                  placeholder={promptPlaceholder}
-                  value={prompt}
-                  onChange={handlePromptChange}
-                  disabled={!mode || (mode === "image" && isGenerating)}
-                  className="w-full min-h-16 items-center rounded-[26px] text-start text-sm lg:text-md pr-40 p-3 border-none bg-background/80 shadow-[inset_0_2px_4px_rgba(0,0,0,0.06),inset_0_1px_2px_rgba(0,0,0,0.04)] focus:border-none dark:bg-muted/20 dark:shadow-[inset_0_2px_4px_rgba(0,0,0,0.3),inset_0_1px_2px_rgba(0,0,0,0.2)] transition-[box-shadow,border-color]"
-                />
-
-                <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-4">
-                  <Button
-                    variant="icon"
-                    size="md"
-                    className="h-8 w-8 rounded-full"
-                    type="button"
-                  >
-                    <PlusIcon />
-                  </Button>
-                  <Button
-                    variant="icon"
-                    size="md"
-                    className="h-8 w-8 rounded-full"
-                    type="button"
-                  >
-                    <SettingsIcon />
-                  </Button>
-                  <Button
-                    type="submit"
-                    size="md"
-                    className="text-sm font-medium text-white px-5 py-1.5 rounded-[12px] transition-all duration-200"
-                    style={{
-                      background: `linear-gradient(to right, ${activeSection.color.replace(" ", ", ")})`,
-                      boxShadow: `0px 5px 10px 0px ${getColorFromGradient(activeSection.color)}33, 0px 1px 4px 0px ${getColorFromGradient(activeSection.color)}A5, 0px -0.5px 0px 0px color(display-p3 1 1 1 / 0.10) inset, 0px 0.5px 0px 0px color(display-p3 1 1 1 / 0.20) inset`,
-                    }}
-                    disabled={isGenerateDisabled}
-                  >
-                    {isGenerating ? (
-                      <span className="flex items-center gap-2">
-                        <Loader2 className="h-4 w-4 animate-spin" />
-                        {generateLabel}
-                      </span>
-                    ) : (
-                      generateLabel
-                    )}
-                  </Button>
-                </div>
-              </form>
-            </div>
-          </div>
-        ) : (
-          <div className="flex-1 flex flex-col min-h-0">
-            <div className="flex-shrink-0 px-4 py-6">
-              <div className="flex text-xl font-extralight justify-center gap-2 mx-auto items-center h-10">
-                <span
-                  className="scale-y-85 scale-x-105 font-[500] bg-clip-text text-transparent flex items-center"
-                  style={{
-                    backgroundImage: `linear-gradient(to right, ${activeSection.color.replace(" ", ", ")})`,
-                    WebkitBackgroundClip: "text",
-                    backgroundClip: "text",
-                  }}
-                >
-                  gen
-                </span>
-                <span className="text-foreground/80 flex items-center scale-y-85">
-                  a
-                </span>
-                <Sparkle
-                  style={{
-                    backgroundImage: `linear-gradient(to right, ${activeSection.color.replace(" ", ", ")})`,
-                    WebkitBackgroundClip: "text",
-                    backgroundClip: "text",
-                    color: "transparent",
-                  }}
-                />
-                <span
-                  className="scale-y-85 font-[500] bg-clip-text text-transparent flex items-center"
-                  style={{
-                    backgroundImage: `linear-gradient(to right, ${activeSection.color.replace(" ", ", ")})`,
-                    WebkitBackgroundClip: "text",
-                    backgroundClip: "text",
-                  }}
-                >
-                  new
-                </span>
-                <span className="text-foreground/80 flex items-center scale-y-85">
-                  {activeSection.genName.toLowerCase()}
-                </span>
-              </div>
-            </div>
-            <div className="flex-1 overflow-y-auto px-4 py-4">
-              <div className="w-full max-w-4xl mx-auto space-y-4">
-                {messages.map((message) => (
-                  <ChatBubble key={message.id} message={message} />
-                ))}
-              </div>
-            </div>
-
-            <div className="flex-shrink-0 px-4 py-4">
-              <div className="w-full max-w-4xl mx-auto">
-                <form
-                  onSubmit={handleSubmit}
-                  className="relative"
-                  onClick={(event) => {
-                    const target = event.target as HTMLElement
-                    if (target.closest("input,textarea,button")) {
-                      return
-                    }
-                    const input = event.currentTarget.querySelector(
-                      "textarea, input",
-                    ) as HTMLTextAreaElement | HTMLInputElement | null
-                    input?.focus()
-                  }}
-                >
-                  <Input
-                    multiline
-                    minRows={1}
-                    maxRows={6}
-                    placeholder={promptPlaceholder}
-                    value={prompt}
-                    onChange={handlePromptChange}
-                    disabled={!mode || (mode === "image" && isGenerating)}
-                    className="w-full min-h-16 items-center rounded-[26px] text-lg pr-40 p-3 border border-border/40 bg-background/80 shadow-[inset_0_2px_4px_rgba(0,0,0,0.06),inset_0_1px_2px_rgba(0,0,0,0.04)] focus-visible:border-border dark:border-border/60 dark:bg-muted/20 dark:shadow-[inset_0_2px_4px_rgba(0,0,0,0.3),inset_0_1px_2px_rgba(0,0,0,0.2)] transition-[box-shadow,border-color]"
-                  />
-
-                  <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-4">
-                    <Button
-                      variant="icon"
-                      size="md"
-                      className="h-8 w-8 rounded-full"
-                      type="button"
-                    >
-                      <PlusIcon />
-                    </Button>
-                    <Button
-                      variant="icon"
-                      size="md"
-                      className="h-8 w-8 rounded-full"
-                      type="button"
-                    >
-                      <SettingsIcon />
-                    </Button>
-                    <Button
-                      type="submit"
-                      size="md"
-                      className="text-sm font-medium text-white px-5 py-1.5 rounded-[12px] transition-all duration-200"
-                      style={{
-                        background: `linear-gradient(to right, ${activeSection.color.replace(" ", ", ")})`,
-                        boxShadow: `0px 5px 10px 0px ${getColorFromGradient(activeSection.color)}33, 0px 1px 4px 0px ${getColorFromGradient(activeSection.color)}A5, 0px -0.5px 0px 0px color(display-p3 1 1 1 / 0.10) inset, 0px 0.5px 0px 0px color(display-p3 1 1 1 / 0.20) inset`,
-                      }}
-                      disabled={isGenerateDisabled}
-                    >
-                      {isGenerating ? (
-                        <span className="flex items-center gap-2">
-                          <Loader2 className="h-4 w-4 animate-spin" />
-                          {generateLabel}
-                        </span>
-                      ) : (
-                        generateLabel
-                      )}
-                    </Button>
-                  </div>
-                </form>
-              </div>
-            </div>
-          </div>
-        )}
-      </main>
-
-      <nav className="w-[calc(100%-2%)] mx-auto px-4 py-4 flex items-center gap-2">
-        <div className="relative" data-menu-container>
-          <Button
-            variant="simpleButton"
-            size="xl"
-            onClick={() => setIsMenuOpen(!isMenuOpen)}
+  return messages.length === 0 ? (
+    <div className="flex-1 flex flex-col gap-4 items-center justify-center px-4">
+      <div className="w-full max-w-2xl">
+        <div className="flex text-xl font-extralight justify-center gap-2 mx-auto items-center h-10">
+          <span
+            className="scale-y-85 font-[500] bg-clip-text text-transparent flex items-center"
+            style={{
+              backgroundImage: `linear-gradient(to right, ${activeSection.color.replace(" ", ", ")})`,
+              WebkitBackgroundClip: "text",
+              backgroundClip: "text",
+            }}
           >
-            <LogoIcon style={{ width: "30px", height: "30px" }} />
-          </Button>
+            gen
+          </span>
+          <span className="text-foreground/80 flex items-center scale-y-85">
+            a
+          </span>
 
-          {isMenuOpen && (
-            <div className="absolute bottom-full left-0 mb-4 bg-background border border-border/40 rounded-xl shadow-lg py-3 px-3">
-              <div className="flex flex-col items-center gap-6">
-                <Button
-                  variant="simpleButton"
-                  size="sm"
-                  className="flex items-center gap-2"
-                >
-                  <ThemeToggle />
-                </Button>
+          <div className="flex items-baseline">
+            <Sparkle
+              style={{
+                width: "10px",
+                height: "10px",
+                color: getColorFromGradient(activeSection.color),
+              }}
+            />
+            <span
+              className="scale-y-85 font-[500] bg-clip-text text-transparent flex items-baseline"
+              style={{
+                backgroundImage: `linear-gradient(to right, ${activeSection.color.replace(" ", ", ")})`,
+                WebkitBackgroundClip: "text",
+                backgroundClip: "text",
+              }}
+            >
+              new
+            </span>
+          </div>
 
-                <Button
-                  variant="simpleButton"
-                  size="sm"
-                  aria-label="Open gen.new GitHub repository"
-                  render={({ children, ...props }) => (
-                    <a
-                      {...props}
-                      href="https://github.com/genxai/new"
-                      target="_blank"
-                      rel="noopener noreferrer"
-                    >
-                      {children}
-                      <Github className="size-4" aria-hidden />
-                      GitHub
-                    </a>
-                  )}
-                />
-                <AuthAction
-                  isAuthenticated={isAuthenticated}
-                  isLoading={isLoading}
-                />
-              </div>
-            </div>
-          )}
+          <span className="text-foreground/80 flex items-center scale-y-85">
+            {activeSection.genName.toLowerCase()}
+          </span>
         </div>
+        <EmptyState mode={mode} />
+      </div>
+      <div className="w-full max-w-2xl mt-8">
+        <form
+          onSubmit={handleSubmit}
+          className="relative"
+          onClick={(event) => {
+            const target = event.target as HTMLElement
+            if (target.closest("input,textarea,button")) {
+              return
+            }
+            const input = event.currentTarget.querySelector(
+              "textarea, input",
+            ) as HTMLTextAreaElement | HTMLInputElement | null
+            input?.focus()
+          }}
+        >
+          <Input
+            multiline
+            minRows={1}
+            maxRows={6}
+            placeholder={promptPlaceholder}
+            value={prompt}
+            onChange={handlePromptChange}
+            disabled={!mode || (mode === "image" && isGenerating)}
+            className="w-full min-h-16 items-center rounded-[26px] text-start text-sm lg:text-md pr-40 p-3 border-none bg-background/80 shadow-[inset_0_2px_4px_rgba(0,0,0,0.06),inset_0_1px_2px_rgba(0,0,0,0.04)] focus:border-none dark:bg-muted/20 dark:shadow-[inset_0_2px_4px_rgba(0,0,0,0.3),inset_0_1px_2px_rgba(0,0,0,0.2)] transition-[box-shadow,border-color]"
+          />
 
-        <div className="flex-1 flex items-center justify-center gap-8">
-          {sections.map((section) => {
-            const Icon = section.icon
-            const isActive = activeSection.id === section.id
-
-            return (
-              <button
-                key={section.id}
-                onClick={() => handleSectionClick(section)}
-                className="flex flex-col items-center cursor-pointer gap-1 p-2"
-              >
-                <Icon
-                  className="h-5 w-5 transition-colors text-muted-foreground/50"
-                  style={
-                    isActive
-                      ? {
-                          color: getColorFromGradient(section.color),
-                        }
-                      : undefined
-                  }
-                />
-                <span
-                  className="text-xs font-medium text-muted-foreground/50"
-                  style={
-                    isActive
-                      ? {
-                          backgroundImage: `linear-gradient(to right, ${section.color.replace(" ", ", ")})`,
-                          WebkitBackgroundClip: "text",
-                          backgroundClip: "text",
-                          color: "transparent",
-                          WebkitTextFillColor: "transparent",
-                        }
-                      : undefined
-                  }
-                >
-                  {section.navName}
+          <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-4">
+            <Button
+              variant="icon"
+              size="md"
+              className="h-8 w-8 rounded-full"
+              type="button"
+            >
+              <PlusIcon />
+            </Button>
+            <Button
+              variant="icon"
+              size="md"
+              className="h-8 w-8 rounded-full"
+              type="button"
+            >
+              <SettingsIcon />
+            </Button>
+            <Button
+              type="submit"
+              size="md"
+              className="text-sm font-medium text-white px-5 py-1.5 rounded-[12px] transition-all duration-200"
+              style={{
+                background: `linear-gradient(to right, ${activeSection.color.replace(" ", ", ")})`,
+                boxShadow: `0px 5px 10px 0px ${getColorFromGradient(activeSection.color)}33, 0px 1px 4px 0px ${getColorFromGradient(activeSection.color)}A5, 0px -0.5px 0px 0px color(display-p3 1 1 1 / 0.10) inset, 0px 0.5px 0px 0px color(display-p3 1 1 1 / 0.20) inset`,
+              }}
+              disabled={isGenerateDisabled}
+            >
+              {isGenerating ? (
+                <span className="flex items-center gap-2">
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  {generateLabel}
                 </span>
-              </button>
-            )
-          })}
-        </div>
-        <div className="w-5"></div>
-      </nav>
+              ) : (
+                generateLabel
+              )}
+            </Button>
+          </div>
+        </form>
+      </div>
     </div>
-  )
-}
+  ) : (
+    <div className="flex-1 flex flex-col min-h-0">
+      <div className="flex-shrink-0 px-4 py-6">
+        <div className="flex text-xl font-extralight justify-center gap-2 mx-auto items-center h-10">
+          <span
+            className="scale-y-85 scale-x-105 font-[500] bg-clip-text text-transparent flex items-center"
+            style={{
+              backgroundImage: `linear-gradient(to right, ${activeSection.color.replace(" ", ", ")})`,
+              WebkitBackgroundClip: "text",
+              backgroundClip: "text",
+            }}
+          >
+            gen
+          </span>
+          <span className="text-foreground/80 flex items-center scale-y-85">
+            a
+          </span>
+          <Sparkle
+            style={{
+              backgroundImage: `linear-gradient(to right, ${activeSection.color.replace(" ", ", ")})`,
+              WebkitBackgroundClip: "text",
+              backgroundClip: "text",
+              color: "transparent",
+            }}
+          />
+          <span
+            className="scale-y-85 font-[500] bg-clip-text text-transparent flex items-center"
+            style={{
+              backgroundImage: `linear-gradient(to right, ${activeSection.color.replace(" ", ", ")})`,
+              WebkitBackgroundClip: "text",
+              backgroundClip: "text",
+            }}
+          >
+            new
+          </span>
+          <span className="text-foreground/80 flex items-center scale-y-85">
+            {activeSection.genName.toLowerCase()}
+          </span>
+        </div>
+      </div>
+      <div className="flex-1 overflow-y-auto px-4 py-4">
+        <div className="w-full max-w-4xl mx-auto space-y-4">
+          {messages.map((message) => (
+            <ChatBubble key={message.id} message={message} />
+          ))}
+        </div>
+      </div>
 
-type AuthActionProps = {
-  isAuthenticated: boolean
-  isLoading: boolean
-}
+      <div className="flex-shrink-0 px-4 py-4">
+        <div className="w-full max-w-4xl mx-auto">
+          <form
+            onSubmit={handleSubmit}
+            className="relative"
+            onClick={(event) => {
+              const target = event.target as HTMLElement
+              if (target.closest("input,textarea,button")) {
+                return
+              }
+              const input = event.currentTarget.querySelector(
+                "textarea, input",
+              ) as HTMLTextAreaElement | HTMLInputElement | null
+              input?.focus()
+            }}
+          >
+            <Input
+              multiline
+              minRows={1}
+              maxRows={6}
+              placeholder={promptPlaceholder}
+              value={prompt}
+              onChange={handlePromptChange}
+              disabled={!mode || (mode === "image" && isGenerating)}
+              className="w-full min-h-16 items-center rounded-[26px] text-lg pr-40 p-3 border border-border/40 bg-background/80 shadow-[inset_0_2px_4px_rgba(0,0,0,0.06),inset_0_1px_2px_rgba(0,0,0,0.04)] focus-visible:border-border dark:border-border/60 dark:bg-muted/20 dark:shadow-[inset_0_2px_4px_rgba(0,0,0,0.3),inset_0_1px_2px_rgba(0,0,0,0.2)] transition-[box-shadow,border-color]"
+            />
 
-function AuthAction({ isAuthenticated, isLoading }: AuthActionProps) {
-  if (isLoading) {
-    return null
-  }
-
-  if (isAuthenticated) {
-    return (
-      <Button
-        render={<Link to="/settings" />}
-        variant="ghost"
-        size="sm"
-        aria-label="Open settings"
-      >
-        <UserRound className="size-4" aria-hidden />
-        Profile
-      </Button>
-    )
-  }
-
-  return (
-    <Button render={<Link to="/auth" />} variant="simpleButton" size="sm">
-      <UserRound className="size-4" aria-hidden />
-      Sign in
-    </Button>
+            <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-4">
+              <Button
+                variant="icon"
+                size="md"
+                className="h-8 w-8 rounded-full"
+                type="button"
+              >
+                <PlusIcon />
+              </Button>
+              <Button
+                variant="icon"
+                size="md"
+                className="h-8 w-8 rounded-full"
+                type="button"
+              >
+                <SettingsIcon />
+              </Button>
+              <Button
+                type="submit"
+                size="md"
+                className="text-sm font-medium text-white px-5 py-1.5 rounded-[12px] transition-all duration-200"
+                style={{
+                  background: `linear-gradient(to right, ${activeSection.color.replace(" ", ", ")})`,
+                  boxShadow: `0px 5px 10px 0px ${getColorFromGradient(activeSection.color)}33, 0px 1px 4px 0px ${getColorFromGradient(activeSection.color)}A5, 0px -0.5px 0px 0px color(display-p3 1 1 1 / 0.10) inset, 0px 0.5px 0px 0px color(display-p3 1 1 1 / 0.20) inset`,
+                }}
+                disabled={isGenerateDisabled}
+              >
+                {isGenerating ? (
+                  <span className="flex items-center gap-2">
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    {generateLabel}
+                  </span>
+                ) : (
+                  generateLabel
+                )}
+              </Button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
   )
 }
 
