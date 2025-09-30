@@ -19,8 +19,9 @@ import { toast } from "@/lib/toast"
 import { useClientId } from "@/hooks/useClientId"
 import { FREE_GENERATION_LIMITS } from "@/shared/usage-limits"
 import { api } from "../../../convex/_generated/api"
-import { Sparkles, Loader2, Github, UserRound } from "lucide-react"
+import { Loader2, Github, UserRound } from "lucide-react"
 import { Streamdown } from "streamdown"
+import Sparkle from "@/components/ui/sparkle"
 
 const GUEST_GENERATION_STORAGE_KEY = "gen.new.guest-generations"
 const GUEST_TEXT_STORAGE_KEY = "gen.new.guest-text"
@@ -401,7 +402,7 @@ export default function MainPage() {
     mode === "image"
       ? "Background of soft, abstract gradient pastels"
       : mode === "text"
-        ? "Ask anything in chat"
+        ? "Ask a question or describe what you want to write"
         : "Coming soon"
 
   const generateLabel =
@@ -420,111 +421,234 @@ export default function MainPage() {
 
   return (
     <div className="h-dvh bg-background text-foreground flex flex-col">
-      <main className="flex-1 flex flex-col items-center justify-between px-4 py-10">
-        <div className="w-full max-w-2xl space-y-6">
-          <div className="flex text-xl font-extralight justify-center gap-2 mx-auto items-center h-10">
-            <span
-              className="scale-y-85 font-[500] bg-clip-text text-transparent flex items-center"
-              style={{
-                backgroundImage: `linear-gradient(to right, ${activeSection.color.replace(" ", ", ")})`,
-                WebkitBackgroundClip: "text",
-                backgroundClip: "text",
-              }}
-            >
-              gen
-            </span>
-            <span className="text-foreground/80 flex items-center scale-y-85">
-              a
-            </span>
-            <span
-              className="scale-y-85 font-[500] bg-clip-text text-transparent flex items-center"
-              style={{
-                backgroundImage: `linear-gradient(to right, ${activeSection.color.replace(" ", ", ")})`,
-                WebkitBackgroundClip: "text",
-                backgroundClip: "text",
-              }}
-            >
-              new
-            </span>
-            <span className="text-foreground/80 flex items-center scale-y-85">
-              {activeSection.genName.toLowerCase()}
-            </span>
-          </div>
+      <main className="flex-1 flex flex-col min-h-0">
+        {messages.length === 0 ? (
+          <div className="flex-1 flex flex-col gap-4 items-center justify-center px-4">
+            <div className="w-full max-w-2xl">
+              <div className="flex text-xl font-extralight justify-center gap-2 mx-auto items-center h-10">
+                <span
+                  className="scale-y-85 font-[500] bg-clip-text text-transparent flex items-center"
+                  style={{
+                    backgroundImage: `linear-gradient(to right, ${activeSection.color.replace(" ", ", ")})`,
+                    WebkitBackgroundClip: "text",
+                    backgroundClip: "text",
+                  }}
+                >
+                  gen
+                </span>
+                <span className="text-foreground/80 flex items-center scale-y-85">
+                  a
+                </span>
 
-          <div className="max-w-xl mx-auto w-full">
-            <div className="min-h-[260px] max-h-[460px] overflow-y-auto rounded-[24px] border border-border/40 bg-background/60 dark:bg-muted/20 p-4 shadow-[0_8px_30px_rgb(0,0,0,0.04)] dark:shadow-[0_8px_30px_rgba(0,0,0,0.24)] space-y-4 transition-[background-color,box-shadow]">
-              {messages.length === 0 ? (
-                <EmptyState mode={mode} />
-              ) : (
-                messages.map((message) => (
-                  <ChatBubble key={message.id} message={message} />
-                ))
-              )}
-            </div>
-          </div>
-
-          <form
-            onSubmit={handleSubmit}
-            className="relative max-w-xl mx-auto"
-            onClick={(event) => {
-              const target = event.target as HTMLElement
-              if (target.closest("input,button")) {
-                return
-              }
-              const input = event.currentTarget.querySelector(
-                "input",
-              ) as HTMLInputElement | null
-              input?.focus()
-            }}
-          >
-            <Input
-              type="text"
-              placeholder={promptPlaceholder}
-              value={prompt}
-              onChange={handlePromptChange}
-              disabled={!mode || (mode === "image" && isGenerating)}
-              className="w-full min-h-24 items-start rounded-[26px] text-lg pr-40 p-3 pb-12 border border-border/40 bg-background/80 shadow-[inset_0_2px_4px_rgba(0,0,0,0.06),inset_0_1px_2px_rgba(0,0,0,0.04)] focus-visible:border-border dark:border-border/60 dark:bg-muted/20 dark:shadow-[inset_0_2px_4px_rgba(0,0,0,0.3),inset_0_1px_2px_rgba(0,0,0,0.2)] transition-[box-shadow,border-color]"
-            />
-
-            <div className="absolute right-3 bottom-3 flex items-center gap-4">
-              <Button
-                variant="icon"
-                size="md"
-                className="h-8 w-8 rounded-full"
-                type="button"
-              >
-                <PlusIcon />
-              </Button>
-              <Button
-                variant="icon"
-                size="md"
-                className="h-8 w-8 rounded-full"
-                type="button"
-              >
-                <SettingsIcon />
-              </Button>
-              <Button
-                type="submit"
-                size="md"
-                className="text-sm font-medium text-white px-5 py-1.5 rounded-[12px] transition-all duration-200"
-                style={{
-                  background: `linear-gradient(to right, ${activeSection.color.replace(" ", ", ")})`,
-                  boxShadow: `0px 5px 10px 0px ${getColorFromGradient(activeSection.color)}33, 0px 1px 4px 0px ${getColorFromGradient(activeSection.color)}A5, 0px -0.5px 0px 0px color(display-p3 1 1 1 / 0.10) inset, 0px 0.5px 0px 0px color(display-p3 1 1 1 / 0.20) inset`,
-                }}
-                disabled={isGenerateDisabled}
-              >
-                {isGenerating ? (
-                  <span className="flex items-center gap-2">
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                    {generateLabel}
+                <div className="flex items-baseline">
+                  <Sparkle
+                    style={{
+                      width: "10px",
+                      height: "10px",
+                      color: getColorFromGradient(activeSection.color),
+                    }}
+                  />
+                  <span
+                    className="scale-y-85 font-[500] bg-clip-text text-transparent flex items-baseline"
+                    style={{
+                      backgroundImage: `linear-gradient(to right, ${activeSection.color.replace(" ", ", ")})`,
+                      WebkitBackgroundClip: "text",
+                      backgroundClip: "text",
+                    }}
+                  >
+                    new
                   </span>
-                ) : (
-                  generateLabel
-                )}
-              </Button>
+                </div>
+
+                <span className="text-foreground/80 flex items-center scale-y-85">
+                  {activeSection.genName.toLowerCase()}
+                </span>
+              </div>
+              <EmptyState mode={mode} />
             </div>
-          </form>
-        </div>
+            <div className="w-full max-w-2xl mt-8">
+              <form
+                onSubmit={handleSubmit}
+                className="relative"
+                onClick={(event) => {
+                  const target = event.target as HTMLElement
+                  if (target.closest("input,textarea,button")) {
+                    return
+                  }
+                  const input = event.currentTarget.querySelector(
+                    "textarea, input",
+                  ) as HTMLTextAreaElement | HTMLInputElement | null
+                  input?.focus()
+                }}
+              >
+                <Input
+                  multiline
+                  minRows={1}
+                  maxRows={6}
+                  placeholder={promptPlaceholder}
+                  value={prompt}
+                  onChange={handlePromptChange}
+                  disabled={!mode || (mode === "image" && isGenerating)}
+                  className="w-full min-h-16 items-center rounded-[26px] text-start text-sm lg:text-md pr-40 p-3 border-none bg-background/80 shadow-[inset_0_2px_4px_rgba(0,0,0,0.06),inset_0_1px_2px_rgba(0,0,0,0.04)] focus:border-none dark:bg-muted/20 dark:shadow-[inset_0_2px_4px_rgba(0,0,0,0.3),inset_0_1px_2px_rgba(0,0,0,0.2)] transition-[box-shadow,border-color]"
+                />
+
+                <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-4">
+                  <Button
+                    variant="icon"
+                    size="md"
+                    className="h-8 w-8 rounded-full"
+                    type="button"
+                  >
+                    <PlusIcon />
+                  </Button>
+                  <Button
+                    variant="icon"
+                    size="md"
+                    className="h-8 w-8 rounded-full"
+                    type="button"
+                  >
+                    <SettingsIcon />
+                  </Button>
+                  <Button
+                    type="submit"
+                    size="md"
+                    className="text-sm font-medium text-white px-5 py-1.5 rounded-[12px] transition-all duration-200"
+                    style={{
+                      background: `linear-gradient(to right, ${activeSection.color.replace(" ", ", ")})`,
+                      boxShadow: `0px 5px 10px 0px ${getColorFromGradient(activeSection.color)}33, 0px 1px 4px 0px ${getColorFromGradient(activeSection.color)}A5, 0px -0.5px 0px 0px color(display-p3 1 1 1 / 0.10) inset, 0px 0.5px 0px 0px color(display-p3 1 1 1 / 0.20) inset`,
+                    }}
+                    disabled={isGenerateDisabled}
+                  >
+                    {isGenerating ? (
+                      <span className="flex items-center gap-2">
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                        {generateLabel}
+                      </span>
+                    ) : (
+                      generateLabel
+                    )}
+                  </Button>
+                </div>
+              </form>
+            </div>
+          </div>
+        ) : (
+          <div className="flex-1 flex flex-col min-h-0">
+            <div className="flex-shrink-0 px-4 py-6">
+              <div className="flex text-xl font-extralight justify-center gap-2 mx-auto items-center h-10">
+                <span
+                  className="scale-y-85 scale-x-105 font-[500] bg-clip-text text-transparent flex items-center"
+                  style={{
+                    backgroundImage: `linear-gradient(to right, ${activeSection.color.replace(" ", ", ")})`,
+                    WebkitBackgroundClip: "text",
+                    backgroundClip: "text",
+                  }}
+                >
+                  gen
+                </span>
+                <span className="text-foreground/80 flex items-center scale-y-85">
+                  a
+                </span>
+                <Sparkle
+                  style={{
+                    backgroundImage: `linear-gradient(to right, ${activeSection.color.replace(" ", ", ")})`,
+                    WebkitBackgroundClip: "text",
+                    backgroundClip: "text",
+                    color: "transparent",
+                  }}
+                />
+                <span
+                  className="scale-y-85 font-[500] bg-clip-text text-transparent flex items-center"
+                  style={{
+                    backgroundImage: `linear-gradient(to right, ${activeSection.color.replace(" ", ", ")})`,
+                    WebkitBackgroundClip: "text",
+                    backgroundClip: "text",
+                  }}
+                >
+                  new
+                </span>
+                <span className="text-foreground/80 flex items-center scale-y-85">
+                  {activeSection.genName.toLowerCase()}
+                </span>
+              </div>
+            </div>
+            <div className="flex-1 overflow-y-auto px-4 py-4">
+              <div className="w-full max-w-4xl mx-auto space-y-4">
+                {messages.map((message) => (
+                  <ChatBubble key={message.id} message={message} />
+                ))}
+              </div>
+            </div>
+
+            <div className="flex-shrink-0 px-4 py-4">
+              <div className="w-full max-w-4xl mx-auto">
+                <form
+                  onSubmit={handleSubmit}
+                  className="relative"
+                  onClick={(event) => {
+                    const target = event.target as HTMLElement
+                    if (target.closest("input,textarea,button")) {
+                      return
+                    }
+                    const input = event.currentTarget.querySelector(
+                      "textarea, input",
+                    ) as HTMLTextAreaElement | HTMLInputElement | null
+                    input?.focus()
+                  }}
+                >
+                  <Input
+                    multiline
+                    minRows={1}
+                    maxRows={6}
+                    placeholder={promptPlaceholder}
+                    value={prompt}
+                    onChange={handlePromptChange}
+                    disabled={!mode || (mode === "image" && isGenerating)}
+                    className="w-full min-h-16 items-center rounded-[26px] text-lg pr-40 p-3 border border-border/40 bg-background/80 shadow-[inset_0_2px_4px_rgba(0,0,0,0.06),inset_0_1px_2px_rgba(0,0,0,0.04)] focus-visible:border-border dark:border-border/60 dark:bg-muted/20 dark:shadow-[inset_0_2px_4px_rgba(0,0,0,0.3),inset_0_1px_2px_rgba(0,0,0,0.2)] transition-[box-shadow,border-color]"
+                  />
+
+                  <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-4">
+                    <Button
+                      variant="icon"
+                      size="md"
+                      className="h-8 w-8 rounded-full"
+                      type="button"
+                    >
+                      <PlusIcon />
+                    </Button>
+                    <Button
+                      variant="icon"
+                      size="md"
+                      className="h-8 w-8 rounded-full"
+                      type="button"
+                    >
+                      <SettingsIcon />
+                    </Button>
+                    <Button
+                      type="submit"
+                      size="md"
+                      className="text-sm font-medium text-white px-5 py-1.5 rounded-[12px] transition-all duration-200"
+                      style={{
+                        background: `linear-gradient(to right, ${activeSection.color.replace(" ", ", ")})`,
+                        boxShadow: `0px 5px 10px 0px ${getColorFromGradient(activeSection.color)}33, 0px 1px 4px 0px ${getColorFromGradient(activeSection.color)}A5, 0px -0.5px 0px 0px color(display-p3 1 1 1 / 0.10) inset, 0px 0.5px 0px 0px color(display-p3 1 1 1 / 0.20) inset`,
+                      }}
+                      disabled={isGenerateDisabled}
+                    >
+                      {isGenerating ? (
+                        <span className="flex items-center gap-2">
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                          {generateLabel}
+                        </span>
+                      ) : (
+                        generateLabel
+                      )}
+                    </Button>
+                  </div>
+                </form>
+              </div>
+            </div>
+          </div>
+        )}
       </main>
 
       <nav className="w-[calc(100%-2%)] mx-auto px-4 py-4 flex items-center gap-2">
@@ -656,7 +780,7 @@ function AuthAction({ isAuthenticated, isLoading }: AuthActionProps) {
 function EmptyState({ mode }: { mode: SectionMode | null }) {
   if (!mode) {
     return (
-      <div className="flex h-full w-full flex-col items-center justify-center text-center gap-3 text-muted-foreground">
+      <div className="flex h-full w-full flex-col items-center justify-center text-center gap-2 text-muted-foreground">
         <span className="text-sm font-medium">
           This generator is coming soon.
         </span>
@@ -664,23 +788,7 @@ function EmptyState({ mode }: { mode: SectionMode | null }) {
     )
   }
 
-  return (
-    <div className="flex h-full w-full flex-col items-center justify-center text-center gap-3 text-muted-foreground">
-      <span className="flex h-12 w-12 items-center justify-center rounded-full bg-primary/10 text-primary">
-        <Sparkles className="h-6 w-6" aria-hidden />
-      </span>
-      <div className="space-y-1">
-        <p className="font-medium text-foreground">
-          {mode === "text" ? "Start chatting" : "Create something visual"}
-        </p>
-        <p className="text-sm">
-          {mode === "text"
-            ? "Ask a question or describe what you want to write."
-            : "Describe the image you want to see."}
-        </p>
-      </div>
-    </div>
-  )
+  return null
 }
 
 function ChatBubble({ message }: { message: ChatMessage }) {
