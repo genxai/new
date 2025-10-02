@@ -156,7 +156,7 @@
     scroll-behavior: auto;
   }
   body {
-    background-color: var(--background);
+    background-color: transparent;
     color: var(--foreground);
     overscroll-behavior: none;
     font-family: "Zalando Sans", "Inter", ui-sans-serif, system-ui, sans-serif;
